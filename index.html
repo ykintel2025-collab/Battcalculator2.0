@@ -3,188 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Capaciteit Calculator</title>
+    <title>Thuisbatterij Calculator | Exclupower</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Basis styling voor een moderne look */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
+        body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
+        .container { max-width: 800px; width: 100%; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px D30px rgba(0,0,0,0.1); text-align: center; }
+        .logo { max-width: 250px; height: auto; margin-bottom: 20px; }
+        h1 { color: #1e3a5f; font-size: 2.2rem; margin-top: 0; margin-bottom: 30px; }
+        h2, h3 { color: #1e3a5f; }
+        .results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; text-align: left; margin-top: 20px; }
+        .result-card { background-color: #f9fbfd; padding: 20px; border-radius: 12px; border: 1px solid #e0e6ed; }
+        .result-card h3 { margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .main-recommendation { grid-column: 1 / -1; text-align: center; background-color: #eaf9ed; border-color: #2ecc71; }
+        .main-recommendation h2 { margin-top: 0; }
+        .chart-card { grid-column: 1 / -1; }
+        .interactive-settings { grid-column: 1 / -1; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .setting-row label { font-weight: 500; flex-basis: 200px; text-align: left; }
+        .setting-row input[type="range"], .setting-row select { flex-grow: 1; min-width: 150px; }
+        .setting-row .value-display { font-weight: 700; min-width: 40px; text-align: right; background-color: #e0e6ed; padding: 5px 10px; border-radius: 6px; }
+        .setting-row select, input[type="range"] { padding: 8px; border-radius: 8px; border: 1px solid #e0e6ed; background-color: white; font-size: 1em; }
+        .chart-canvas-container { position: relative; height: 350px; width: 100%; margin-top: 20px; }
+        .chart-summary { display: flex; justify-content: space-around; text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e6ed; flex-wrap: wrap; }
+        .summary-item { font-size: 0.9em; padding: 0 10px; margin-bottom: 10px; }
+        .summary-item strong { display: block; font-size: 1.3em; }
+        #totaalVerbruikUitleg { font-size: 1.1em; line-height: 1.6; text-align: left; padding: 10px; }
+        #capaciteitResultaat { font-size: 2.5em; color: #27ae60; font-weight: 700; }
 
-        .calculator-container {
-            background-color: #ffffff;
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        p {
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #34495e;
-        }
-
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #bdc3c7;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box; /* Zorgt dat padding de breedte niet beïnvloedt */
-        }
-        
-        input[type="number"]:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #2ecc71;
-        }
-
-        .resultaat-sectie {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #ecf0f1;
-            border-radius: 8px;
-            border: 1px solid #e0e6e8;
-            display: none; /* Standaard verborgen */
-        }
-        
-        .resultaat-sectie h2 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
-        }
-
-        .resultaat-sectie #capaciteit-output {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #27ae60;
-        }
-
-        .resultaat-sectie #advies-tekst {
-            color: #34495e;
-            margin-top: 10px;
-            margin-bottom: 0;
-            font-size: 15px;
-            line-height: 1.5;
+        @media (max-width: 600px) {
+            .results-grid { grid-template-columns: 1fr; }
+            .setting-row { flex-direction: column; align-items: stretch; }
+            .setting-row label { margin-bottom: 5px; }
         }
     </style>
 </head>
 <body>
-
-    <div class="calculator-container">
-        <h1>Bereken uw Ideale Thuisbatterij</h1>
-        <p>Voer uw gegevens in om een schatting te krijgen van de benodigde batterijcapaciteit.</p>
-
-        <form id="calculator-form">
-            <div class="input-group">
-                <label for="jaarverbruik">Jaarlijks stroomverbruik (kWh)</label>
-                <input type="number" id="jaarverbruik" placeholder="bv. 4500" required>
+    <div class="container">
+        <img src="https://via.placeholder.com/250x60.png?text=Exclupower+Logo" alt="Exclupower Bedrijfslogo" class="logo">
+        <h1>Thuisbatterij Calculator</h1>
+        
+        <div class="results-grid">
+            <div class="result-card interactive-settings">
+                <h3>Stel uw situatie samen</h3>
+                <div class="setting-row">
+                    <label for="verbruikSelect">Huishouden & Basisverbruik</label>
+                    <select id="verbruikSelect">
+                        <option value="2500">1-2 Personen (~2500 kWh)</option>
+                        <option value="3500" selected>3-4 Personen (~3500 kWh)</option>
+                        <option value="5000">5+ Personen (~5000 kWh)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="panelenSlider">Aantal zonnepanelen (~430Wp)</label>
+                    <input type="range" id="panelenSlider" min="0" max="40" step="1" value="12">
+                    <span class="value-display" id="panelenValue">12</span>
+                </div>
+                <div class="setting-row">
+                    <label for="evSelect">Elektrische auto</label>
+                    <select id="evSelect">
+                        <option value="0">Geen</option>
+                        <option value="1800">Weinig (tot 10.000 km/j)</option>
+                        <option value="3600">Gemiddeld (10-20.000 km/j)</option>
+                        <option value="5400">Veel (20.000+ km/j)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="wpSelect">Warmtepomp</label>
+                    <select id="wpSelect">
+                        <option value="0">Geen</option>
+                        <option value="1500">Appartement</option>
+                        <option value="2500">Tussenwoning</option>
+                        <option value="3500">Hoekwoning / 2-onder-1-kap</option>
+                        <option value="4500">Vrijstaand</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="zonnepanelen">Piekvermogen zonnepanelen (Wp)</label>
-                <input type="number" id="zonnepanelen" placeholder="bv. 5000" required>
+            <div class="result-card main-recommendation">
+                <h2>Uw Aanbevolen Batterijcapaciteit</h2>
+                <p id="capaciteitResultaat">7.5 kWh</p>
+            </div>
+            
+            <div class="result-card">
+                <h3>Totaal Jaarverbruik</h3>
+                <div id="totaalVerbruikUitleg"></div>
             </div>
 
-            <button type="submit">Bereken Capaciteit</button>
-        </form>
-
-        <div id="resultaat-sectie" class="resultaat-sectie">
-            <h2>Aanbevolen Capaciteit</h2>
-            <span id="capaciteit-output">8.6 kWh</span>
-            <p id="advies-tekst">Dit is een schatting. Een installateur kan u helpen met een definitief advies op maat.</p>
+            <div class="chart-card">
+                <h3>Uw Energieprofiel met Thuisbatterij (op een zonnige dag)</h3>
+                <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
+                <div class="chart-summary" id="chartSummary"></div>
+            </div>
         </div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // De logica voor de berekening
-        document.getElementById('calculator-form').addEventListener('submit', function(event) {
-            // Voorkom dat de pagina herlaadt na het klikken op de knop
-            event.preventDefault();
+        // Een globale variabele voor de grafiek, zodat we deze kunnen vernietigen en opnieuw tekenen
+        let scenarioChart;
 
-            // --- 1. Haal de input van de gebruiker op ---
-            const jaarverbruik = parseFloat(document.getElementById('jaarverbruik').value);
-            // We hebben het piekvermogen in dit simpele model niet direct nodig voor de kernformule,
-            // maar het is goed om het te hebben voor toekomstige, geavanceerdere checks (zoals checken of er genoeg overschot is).
-            const piekvermogenWp = parseFloat(document.getElementById('zonnepanelen').value);
-
-            // Valideer de input
-            if (isNaN(jaarverbruik) || jaarverbruik <= 0 || isNaN(piekvermogenWp) || piekvermogenWp <= 0) {
-                alert("Vul alstublieft geldige, positieve getallen in.");
-                return;
-            }
-
-            // --- 2. Vaste parameters (zoals besproken) ---
-            const VERBRUIKSPROFIEL_NACHT = 0.60; // 60% van het verbruik is 's avonds/nachts
-            const DOD = 0.95; // Depth of Discharge van 95%
-            const RENDEMENT = 0.90; // Round-trip efficiëntie van 90%
-
-            // --- 3. Voer de berekeningen uit ---
-            // Bereken het gemiddelde dagelijkse verbruik
-            const dagelijksVerbruik = jaarverbruik / 365;
-            
-            // Bereken hoeveel er 's nachts wordt verbruikt (dit willen we opslaan)
-            const nachtelijkVerbruik = dagelijksVerbruik * VERBRUIKSPROFIEL_NACHT;
-
-            // Bereken de benodigde *nominale* capaciteit van de batterij
-            const benodigdeCapaciteit = nachtelijkVerbruik / (DOD * RENDEMENT);
-
-            // --- 4. Toon het resultaat op de pagina ---
-            const resultaatSectie = document.getElementById('resultaat-sectie');
-            const capaciteitOutput = document.getElementById('capaciteit-output');
-            const adviesTekst = document.getElementById('advies-tekst');
-            
-            // Rond het getal af op één decimaal voor een nettere weergave
-            capaciteitOutput.textContent = benodigdeCapaciteit.toFixed(1) + " kWh";
-            
-            adviesTekst.textContent = "Met deze capaciteit overbrugt u doorgaans de nacht met uw eigen zonne-energie. Dit maximaliseert uw zelfverbruik en onafhankelijkheid.";
-
-            // Maak de resultaat-sectie zichtbaar
-            resultaatSectie.style.display = 'block';
+        // Wacht tot de hele pagina geladen is
+        document.addEventListener('DOMContentLoaded', () => {
+            setupInteractiveControls();
+            recalculateAndRedraw(); // Voer een eerste berekening uit bij het laden
         });
-    </script>
 
+        function setupInteractiveControls() {
+            const controls = ['verbruikSelect', 'panelenSlider', 'evSelect', 'wpSelect'];
+            controls.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const eventType = (el.tagName === 'SELECT') ? 'change' : 'input';
+                    el.addEventListener(eventType, recalculateAndRedraw);
+                }
+            });
+        }
+
+        function recalculateAndRedraw() {
+            // Update de slider waarde visueel
+            document.getElementById('panelenValue').textContent = document.getElementById('panelenSlider').value;
+            
+            // 1. Verzamel de huidige staat van alle instellingen
+            const state = { 
+                basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
+                aantalPanelen: parseInt(document.getElementById('panelenSlider').value),
+                evVerbruikKwh: parseInt(document.getElementById('evSelect').value),
+                wpVerbruikKwh: parseInt(document.getElementById('wpSelect').value),
+            };
+
+            // 2. Voer de berekeningen uit op basis van de staat
+            const calculations = calculateAdvice(state);
+
+            // 3. Werk de hele gebruikersinterface bij met de nieuwe berekeningen
+            updateDashboardUI(state, calculations);
+        }
+
+        function calculateAdvice(state) {
+            // Technische parameters van een typische thuisbatterij
+            const DOD = 0.95; // Depth of Discharge: 95% bruikbare capaciteit
+            const RENDEMENT = 0.90; // Round-trip efficiëntie: 10% verlies bij laden/ontladen
+
+            // Definieer de energieprofielen per uur voor een gemiddelde dag
+            // Standaard verbruiksprofiel (24 uur)
+            const verbruikProfiel = [0.02, 0.015, 0.015, 0.015, 0.015, 0.03, 0.08, 0.07, 0.05, 0.04, 0.04, 0.04, 0.05, 0.04, 0.04, 0.05, 0.07, 0.09, 0.1, 0.09, 0.08, 0.06, 0.04, 0.03];
+            // Zonneprofiel voor een zonnige dag in het voorjaar/zomer (24 uur)
+            const zonneProfiel = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
+
+            // Bereken totaal verbruik en opbrengst
+            const jaarlijksVerbruikKwh = state.basisVerbruikKwh + state.evVerbruikKwh + state.wpVerbruikKwh;
+            const totaalDagelijksVerbruik = jaarlijksVerbruikKwh / 365;
+
+            const WpPerPaneel = 430;
+            const totaalWp = state.aantalPanelen * WpPerPaneel;
+            // Schatting dagopbrengst op een zonnige dag (een goede vuistregel is totaal Wp * 5)
+            const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000; 
+
+            // Vertaal de profielen naar daadwerkelijke kWh-waarden per uur
+            const geschaaldVerbruik = verbruikProfiel.map(p => p * totaalDagelijksVerbruik);
+            const geschaaldeOpbrengst = zonneProfiel.map(p => p * dagelijkseOpbrengstZonnig);
+            
+            // --- NIEUWE LOGICA: Bereken de benodigde capaciteit ---
+            let nachtelijkTekort = 0;
+            for (let i = 0; i < 24; i++) {
+                // We kijken alleen naar de uren dat de zon NIET schijnt (of te weinig)
+                if (geschaaldeOpbrengst[i] < geschaaldVerbruik[i]) {
+                    nachtelijkTekort += (geschaaldVerbruik[i] - geschaaldeOpbrengst[i]);
+                }
+            }
+            
+            // De benodigde *bruikbare* capaciteit is het tekort. De *nominale* capaciteit moet groter zijn vanwege efficiëntie.
+            const benodigdeCapaciteit = nachtelijkTekort / (DOD * RENDEMENT);
+            
+            // Rond af op de dichtstbijzijnde 0.5 kWh voor een realistisch advies
+            const aanbevolenBatterijCapaciteit = Math.round(benodigdeCapaciteit * 2) / 2;
+
+            return { aanbevolenBatterijCapaciteit, geschaaldVerbruik, geschaaldeOpbrengst, jaarlijksVerbruikKwh };
+        }
+
+        function updateDashboardUI(state, calcs) {
+            // Update het hoofdadvies
+            document.getElementById('capaciteitResultaat').textContent = `${calcs.aanbevolenBatterijCapaciteit.toFixed(1)} kWh`;
+            
+            // Update de breakdown van het totaalverbruik
+            document.getElementById('totaalVerbruikUitleg').innerHTML = 
+                `Basisverbruik: <strong>${state.basisVerbruikKwh} kWh</strong><br>
+                 + E-Auto: <strong>${state.evVerbruikKwh} kWh</strong><br>
+                 + Warmtepomp: <strong>${state.wpVerbruikKwh} kWh</strong><br>
+                 <hr style="border: none; border-top: 1px solid #ccc; margin: 5px 0;">
+                 Totaal: <strong>${calcs.jaarlijksVerbruikKwh.toFixed(0)} kWh/jaar</strong>`;
+            
+            // Teken de grafiek met de nieuwe data
+            renderScenarioChart(calcs.geschaaldVerbruik, calcs.geschaaldeOpbrengst, calcs.aanbevolenBatterijCapaciteit);
+        }
+
+        function renderScenarioChart(verbruikData, opbrengstData, batterijCapaciteit) {
+            const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
+            if (!ctx) return;
+            
+            // --- Simulatie van de energiestromen per uur ---
+            let batterijLading = 0;
+            let totalImport = 0, totalExportNaBatt = 0, totalDirectVerbruik = 0, totalBattVerbruik = 0;
+            const importData = [], directVerbruikData = [], battVerbruikData = [], battLaadData = [];
+
+            const bruikbareCapaciteit = batterijCapaciteit * 0.95; // Houd rekening met DoD
+
+            for (let i = 0; i < 24; i++) {
+                const verbruik = verbruikData[i];
+                const opbrengst = opbrengstData[i];
+                
+                const directGebruikVanZon = Math.min(verbruik, opbrengst);
+                const netto = opbrengst - verbruik;
+                
+                let ontladingUitBatterij = 0, importVanNet = 0, ladingNaarBatterij = 0;
+
+                if (netto > 0) { // Overschot aan zonne-energie
+                    const kanLaden = bruikbareCapaciteit - batterijLading;
+                    ladingNaarBatterij = Math.min(netto, kanLaden);
+                    batterijLading += ladingNaarBatterij;
+                    totalExportNaBatt += (netto - ladingNaarBatterij);
+                } else if (netto < 0) { // Tekort aan zonne-energie
+                    const tekort = -netto;
+                    const kanOntladen = batterijLading;
+                    ontladingUitBatterij = Math.min(tekort, kanOntladen);
+                    batterijLading -= ontladingUitBatterij;
+                    importVanNet = tekort - ontladingUitBatterij;
+                }
+                
+                directVerbruikData.push(directGebruikVanZon);
+                battVerbruikData.push(ontladingUitBatterij);
+                importData.push(importVanNet);
+                battLaadData.push(-ladingNaarBatterij); // Negatief voor weergave onder de 0-lijn
+
+                totalDirectVerbruik += directGebruikVanZon;
+                totalBattVerbruik += ontladingUitBatterij;
+                totalImport += importVanNet;
+            }
+            
+            // Update de samenvatting onder de grafiek
+            const zelfverbruik = totalDirectVerbruik + totalBattVerbruik;
+            document.getElementById('chartSummary').innerHTML = 
+                `<div class="summary-item" style="color:#e74c3c;"><strong>${(totalImport*365).toFixed(0)} kWh/j</strong>Import</div>
+                 <div class="summary-item" style="color:#2ecc71;"><strong>${(zelfverbruik*365).toFixed(0)} kWh/j</strong>Eigen Verbruik</div>
+                 <div class="summary-item" style="color:#9b59b6;"><strong>${(totalExportNaBatt*365).toFixed(0)} kWh/j</strong>Export</div>`;
+            
+            // Vernietig de oude grafiek als deze bestaat, voorkomt tekenfouten
+            if (scenarioChart) {
+                scenarioChart.destroy();
+            }
+            
+            scenarioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [
+                        { label: 'Direct van Zon', data: directVerbruikData, backgroundColor: 'rgba(46, 204, 113, 0.7)' },
+                        { label: 'Uit Batterij', data: battVerbruikData, backgroundColor: 'rgba(52, 152, 219, 0.7)' },
+                        { label: 'Import van Net', data: importData, backgroundColor: 'rgba(231, 76, 60, 0.7)' },
+                        { label: 'Laden Batterij', data: battLaadData, backgroundColor: 'rgba(41, 128, 185, 0.5)' },
+                        { 
+                            type: 'line', 
+                            label: 'Zon-opbrengst', 
+                            data: opbrengstData, 
+                            borderColor: 'rgba(241, 196, 15, 1)', 
+                            backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                            fill: true, 
+                            tension: 0.4, 
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, title: { display: true, text: 'Energie (kWh)' } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
