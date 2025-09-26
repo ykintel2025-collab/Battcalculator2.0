@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thuisbatterij Capaciteit Calculator</title>
+    <style>
+        /* Basis styling voor een moderne look */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box; /* Zorgt dat padding de breedte niet beïnvloedt */
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2ecc71;
+        }
+
+        .resultaat-sectie {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            border: 1px solid #e0e6e8;
+            display: none; /* Standaard verborgen */
+        }
+        
+        .resultaat-sectie h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .resultaat-sectie #capaciteit-output {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #27ae60;
+        }
+
+        .resultaat-sectie #advies-tekst {
+            color: #34495e;
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-container">
+        <h1>Bereken uw Ideale Thuisbatterij</h1>
+        <p>Voer uw gegevens in om een schatting te krijgen van de benodigde batterijcapaciteit.</p>
+
+        <form id="calculator-form">
+            <div class="input-group">
+                <label for="jaarverbruik">Jaarlijks stroomverbruik (kWh)</label>
+                <input type="number" id="jaarverbruik" placeholder="bv. 4500" required>
+            </div>
+
+            <div class="input-group">
+                <label for="zonnepanelen">Piekvermogen zonnepanelen (Wp)</label>
+                <input type="number" id="zonnepanelen" placeholder="bv. 5000" required>
+            </div>
+
+            <button type="submit">Bereken Capaciteit</button>
+        </form>
+
+        <div id="resultaat-sectie" class="resultaat-sectie">
+            <h2>Aanbevolen Capaciteit</h2>
+            <span id="capaciteit-output">8.6 kWh</span>
+            <p id="advies-tekst">Dit is een schatting. Een installateur kan u helpen met een definitief advies op maat.</p>
+        </div>
+    </div>
+
+    <script>
+        // De logica voor de berekening
+        document.getElementById('calculator-form').addEventListener('submit', function(event) {
+            // Voorkom dat de pagina herlaadt na het klikken op de knop
+            event.preventDefault();
+
+            // --- 1. Haal de input van de gebruiker op ---
+            const jaarverbruik = parseFloat(document.getElementById('jaarverbruik').value);
+            // We hebben het piekvermogen in dit simpele model niet direct nodig voor de kernformule,
+            // maar het is goed om het te hebben voor toekomstige, geavanceerdere checks (zoals checken of er genoeg overschot is).
+            const piekvermogenWp = parseFloat(document.getElementById('zonnepanelen').value);
+
+            // Valideer de input
+            if (isNaN(jaarverbruik) || jaarverbruik <= 0 || isNaN(piekvermogenWp) || piekvermogenWp <= 0) {
+                alert("Vul alstublieft geldige, positieve getallen in.");
+                return;
+            }
+
+            // --- 2. Vaste parameters (zoals besproken) ---
+            const VERBRUIKSPROFIEL_NACHT = 0.60; // 60% van het verbruik is 's avonds/nachts
+            const DOD = 0.95; // Depth of Discharge van 95%
+            const RENDEMENT = 0.90; // Round-trip efficiëntie van 90%
+
+            // --- 3. Voer de berekeningen uit ---
+            // Bereken het gemiddelde dagelijkse verbruik
+            const dagelijksVerbruik = jaarverbruik / 365;
+            
+            // Bereken hoeveel er 's nachts wordt verbruikt (dit willen we opslaan)
+            const nachtelijkVerbruik = dagelijksVerbruik * VERBRUIKSPROFIEL_NACHT;
+
+            // Bereken de benodigde *nominale* capaciteit van de batterij
+            const benodigdeCapaciteit = nachtelijkVerbruik / (DOD * RENDEMENT);
+
+            // --- 4. Toon het resultaat op de pagina ---
+            const resultaatSectie = document.getElementById('resultaat-sectie');
+            const capaciteitOutput = document.getElementById('capaciteit-output');
+            const adviesTekst = document.getElementById('advies-tekst');
+            
+            // Rond het getal af op één decimaal voor een nettere weergave
+            capaciteitOutput.textContent = benodigdeCapaciteit.toFixed(1) + " kWh";
+            
+            adviesTekst.textContent = "Met deze capaciteit overbrugt u doorgaans de nacht met uw eigen zonne-energie. Dit maximaliseert uw zelfverbruik en onafhankelijkheid.";
+
+            // Maak de resultaat-sectie zichtbaar
+            resultaatSectie.style.display = 'block';
+        });
+    </script>
+
+</body>
+</html>
