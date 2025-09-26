@@ -3,122 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v1.0 | Exclupower</title>
+    <title>Thuisbatterij Calculator v1.1 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
-        .container { max-width: 800px; width: 100%; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        h1, h2, h3 { color: #1e3a5f; }
-        .results-grid { display: grid; grid-template-columns: 1fr; gap: 20px; text-align: left; margin-top: 20px; }
+        .container { max-width: 1200px; width: 100%; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1, h2, h3 { text-align: center; color: #1e3a5f; }
+        .main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
+        .settings-panel { text-align: left; }
+        .results-panel { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px; }
         .result-card { background-color: #f9fbfd; padding: 20px; border-radius: 12px; border: 1px solid #e0e6ed; }
-        .main-recommendation { text-align: center; background-color: #eaf9ed; border-color: #2ecc71; }
+        .main-recommendation { text-align: center; background-color: #eaf9ed; border-color: #2ecc71; grid-column: 1 / -1; }
         .recommendation-content { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .recommendation-details { flex-grow: 1; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .setting-row label { font-weight: 500; flex-basis: 220px; text-align: left; }
-        .setting-row select, .setting-row input[type="number"], .setting-row input[type="text"], .setting-row input[type="email"] { flex-grow: 1; min-width: 150px; padding: 10px; border-radius: 8px; border: 1px solid #e0e6ed; background-color: white; font-size: 1em; box-sizing: border-box; }
-        .details-container { width: 100%; padding-left: 20px; border-left: 3px solid #3498db; margin-top: 15px; }
+        .setting-row { display: flex; flex-direction: column; align-items: stretch; margin-bottom: 15px; }
+        .setting-row label { font-weight: 500; margin-bottom: 5px; text-align: left; }
+        .setting-row select, .setting-row input[type="number"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e0e6ed; background-color: white; font-size: 1em; box-sizing: border-box; }
         .hidden { display: none; }
-        details { border: 1px solid #e0e6ed; border-radius: 12px; background-color: #f9fbfd; }
-        summary { font-size: 1.2em; font-weight: 700; color: #1e3a5f; padding: 20px; cursor: pointer; list-style: none; }
-        summary::-webkit-details-marker { display: none; }
-        summary::after { content: '▼'; float: right; transition: transform 0.2s; }
-        details[open] summary::after { transform: rotate(180deg); }
-        .details-content { padding: 0 20px 20px 20px; }
-        #capaciteitResultaat { font-size: 2.8em; color: #27ae60; font-weight: 700; display: block; }
-        #adviesUitleg { font-size: 1em; line-height: 1.5; color: #34495e; max-width: 600px; margin: 10px auto; text-align: left; }
-        #chart-explanation { font-size: 0.9em; color: #7f8c8d; line-height: 1.6; margin-top: 15px; padding: 15px; background-color: #f0f4f8; border-radius: 8px;}
+        .chart-canvas-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
+        #capaciteitResultaat { font-size: 2.5em; color: #27ae60; font-weight: 700; display: block; }
+        #adviesUitleg { font-size: 0.9em; line-height: 1.5; color: #34495e; max-width: 400px; margin: 10px auto; text-align: center; }
         .battery-container { text-align: center; }
-        .battery-indicator { width: 80px; height: 150px; border: 4px solid #34495e; border-radius: 10px; position: relative; margin: 10px auto; background-color: #f0f4f8; display: flex; align-items: flex-end; }
-        .battery-indicator::after { content: ''; width: 30px; height: 8px; background-color: #34495e; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); border-radius: 3px; }
+        .battery-indicator { width: 60px; height: 120px; border: 4px solid #34495e; border-radius: 8px; position: relative; margin: 10px auto; background-color: #f0f4f8; display: flex; align-items: flex-end; }
+        .battery-indicator::after { content: ''; width: 25px; height: 7px; background-color: #34495e; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); border-radius: 3px; }
         .battery-level { width: 100%; background: linear-gradient(to top, #2ecc71, #a8e063); border-radius: 4px; transition: height 0.2s ease-out; }
-        #battery-percentage { font-size: 1.5em; font-weight: 700; color: #1e3a5f; }
-        #quote-form button { width: 100%; padding: 15px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.3s ease; margin-top: 10px; }
-        #quote-form button:hover { background-color: #2ecc71; }
-        @media (min-width: 600px) { .recommendation-content { flex-direction: row; align-items: center; justify-content: center; gap: 40px; } }
+        #battery-percentage { font-size: 1.2em; font-weight: 700; color: #1e3a5f; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } .chart-grid { grid-template-columns: 1fr; } }
+        @media (min-width: 600px) { .recommendation-content { flex-direction: row; align-items: center; justify-content: center; gap: 30px; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Calculator v1.0</h1>
-        <div class="results-grid">
-            <details id="settings-container" open>
-                <summary>Stel uw situatie samen</summary>
-                <div class="details-content">
+        <h1>Thuisbatterij Calculator v1.1</h1>
+        <div class="main-grid">
+            <div class="settings-panel result-card">
+                <h3>Stel uw situatie samen</h3>
+                <div class="setting-row">
+                    <label for="verbruikSelect">Huishouden</label>
+                    <select id="verbruikSelect"><option value="2500">1-2 Personen</option><option value="3500" selected>3-4 Personen</option><option value="5000">5+ Personen</option></select>
+                </div>
+                 <div class="setting-row">
+                    <label for="heeftZonnepanelen">Zonnepanelen</label>
+                    <select id="heeftZonnepanelen"><option value="ja">Ja</option><option value="nee">Nee</option></select>
+                </div>
+                <div id="zonnepanelen-huidig-details">
                     <div class="setting-row">
-                        <label for="heeftZonnepanelen">Heeft u zonnepanelen?</label>
-                        <select id="heeftZonnepanelen"><option value="ja">Ja</option><option value="nee">Nee</option></select>
-                    </div>
-                    <div id="zonnepanelen-huidig-details" class="details-container">
-                        <div class="setting-row">
-                            <label for="aantalPanelen">Aantal zonnepanelen</label>
-                            <input type="number" id="aantalPanelen" value="12" placeholder="bv. 12">
-                        </div>
-                    </div>
-                    <div class="setting-row">
-                        <label for="verbruikSelect">Hoe groot is uw huishouden?</label>
-                        <select id="verbruikSelect"><option value="2500">1-2 Personen</option><option value="3500" selected>3-4 Personen</option><option value="5000">5+ Personen</option></select>
-                    </div>
-                    <div class="setting-row">
-                        <label for="evSelect">Heeft u een elektrische auto?</label>
-                        <select id="evSelect"><option value="0">Nee</option><option value="1800">Ja, tot 10.000 km/j</option><option value="3600">Ja, 10-20.000 km/j</option><option value="5400">Ja, 20.000+ km/j</option></select>
-                    </div>
-                    <div class="setting-row">
-                        <label for="wpSelect">Heeft u een warmtepomp?</label>
-                        <select id="wpSelect"><option value="0">Nee</option><option value="1500">Ja, in een appartement</option><option value="2500">Ja, in een tussenwoning</option><option value="3500">Ja, in een hoekwoning</option><option value="4500">Ja, in een vrijstaand huis</option></select>
-                    </div>
-                    <div id="doel-select-container" class="setting-row">
-                        <label for="doelSelect">Wat is uw belangrijkste doel?</label>
-                        <select id="doelSelect"><option value="besparen">Nacht overbruggen (beste TVT)</option><option value="onafhankelijkheid">Teruglevering minimaliseren</option></select>
+                        <label for="aantalPanelen">Aantal panelen</label>
+                        <input type="number" id="aantalPanelen" value="12" placeholder="bv. 12">
                     </div>
                 </div>
-            </details>
-
-            <div id="quote-form-container" class="result-card hidden">
-                <h3>Interesse in zonnepanelen?</h3>
-                <p>Een thuisbatterij is het meest rendabel in combinatie met zonnepanelen. Vul hieronder uw gegevens in voor een vrijblijvende offerte voor een compleet systeem.</p>
-                <form id="quote-form">
-                    <div class="setting-row"><label for="quote-naam">Naam</label><input type="text" id="quote-naam" required></div>
-                    <div class="setting-row"><label for="quote-email">E-mailadres</label><input type="email" id="quote-email" required></div>
-                    <div class="setting-row"><label for="quote-postcode">Postcode</label><input type="text" id="quote-postcode" required></div>
-                    <button type="submit">Aanvraag verzenden</button>
-                </form>
-            </div>
-            
-            <div id="recommendation-card" class="result-card main-recommendation">
-                <h2>Uw Aanbeveling</h2>
-                <div class="recommendation-content">
-                    <div class="recommendation-details">
-                        <strong id="capaciteitResultaat">...</strong>
-                        <p id="adviesUitleg">Vul uw gegevens in voor een advies.</p>
-                        <div id="capaciteit-keuze-container" class="setting-row hidden" style="margin-top: 20px;">
-                            <label for="capaciteit-selector" style="font-weight:700;">Probeer een andere capaciteit:</label>
-                            <select id="capaciteit-selector"></select>
-                        </div>
-                    </div>
-                    <div class="battery-container">
-                        <div class="battery-indicator">
-                            <div class="battery-level" id="battery-level" style="height: 0%;"></div>
-                        </div>
-                        <div id="battery-percentage">--%</div>
-                        <small>Beweeg over de grafiek</small>
-                    </div>
+                <div class="setting-row">
+                    <label for="evSelect">Elektrische auto</label>
+                    <select id="evSelect"><option value="0">Nee</option><option value="1800">Ja, tot 10.000 km/j</option><option value="3600">Ja, 10-20.000 km/j</option><option value="5400">Ja, 20.000+ km/j</option></select>
+                </div>
+                <div class="setting-row">
+                    <label for="wpSelect">Warmtepomp</label>
+                    <select id="wpSelect"><option value="0">Nee</option><option value="1500">Ja, in appartement</option><option value="2500">Ja, in tussenwoning</option><option value="3500">Ja, in hoekwoning</option><option value="4500">Ja, in vrijstaand huis</option></select>
+                </div>
+                <div id="doel-select-container" class="setting-row">
+                    <label for="doelSelect">Belangrijkste doel</label>
+                    <select id="doelSelect"><option value="besparen">Nacht overbruggen (beste TVT)</option><option value="onafhankelijkheid">Teruglevering minimaliseren</option></select>
                 </div>
             </div>
-            
-            <div id="chart-card" class="result-card chart-card">
-                <h3>Uw Energieprofiel</h3>
-                <div id="chart-explanation"></div>
-                <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
+            <div class="results-panel">
+                <div id="recommendation-card" class="result-card main-recommendation">
+                    <div class="recommendation-content">
+                        <div class="recommendation-details">
+                            <h2>Uw Aanbeveling</h2>
+                            <strong id="capaciteitResultaat">...</strong>
+                            <p id="adviesUitleg">Vul uw gegevens in.</p>
+                            <div id="capaciteit-keuze-container" class="setting-row hidden" style="margin-top: 10px; justify-content: center;">
+                                <label for="capaciteit-selector" style="font-weight:700; flex-basis: auto; margin-right: 10px;">Probeer:</label>
+                                <select id="capaciteit-selector" style="flex-grow: 0; min-width: 150px;"></select>
+                            </div>
+                        </div>
+                        <div class="battery-container">
+                             <div id="battery-percentage">--%</div>
+                            <div class="battery-indicator">
+                                <div class="battery-level" id="battery-level" style="height: 0%;"></div>
+                            </div>
+                           <small>Beweeg over grafiek 3</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-grid">
+                    <div id="no-solar-chart-card" class="result-card">
+                        <h3>1. Situatie Zonder Iets</h3>
+                        <div class="chart-canvas-container"><canvas id="noSolarChartCanvas"></canvas></div>
+                    </div>
+                    <div id="comparison-chart-card" class="result-card">
+                        <h3>2. Jaarlijkse Stroom van Net</h3>
+                        <div class="chart-canvas-container"><canvas id="comparisonChartCanvas"></canvas></div>
+                    </div>
+                </div>
+                 <div id="chart-card" class="result-card">
+                    <h3>3. Uw Energieprofiel met Batterij</h3>
+                    <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
+                </div>
             </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let scenarioChart;
+        // --- Globale Chart Variabelen ---
+        let noSolarChart, comparisonChart, scenarioChart;
         let batterijLadingData = [];
         let laatsteVerbruikData = [], laatsteOpbrengstData = [];
 
+        // --- Initialisatie ---
         document.addEventListener('DOMContentLoaded', () => {
             setupInteractiveControls();
             recalculateAndRedraw();
@@ -127,67 +119,72 @@
         function setupInteractiveControls() {
             const ids = ['verbruikSelect', 'evSelect', 'wpSelect', 'heeftZonnepanelen', 'aantalPanelen', 'doelSelect', 'capaciteit-selector'];
             ids.forEach(id => document.getElementById(id)?.addEventListener('change', recalculateAndRedraw));
-            document.getElementById('quote-form')?.addEventListener('submit', handleQuoteSubmit);
         }
         
-        function handleQuoteSubmit(event) {
-            event.preventDefault();
-            const naam = document.getElementById('quote-naam').value;
-            const email = document.getElementById('quote-email').value;
-            const postcode = document.getElementById('quote-postcode').value;
-            const subject = encodeURIComponent(`Offerte-aanvraag Zonnepanelen via Calculator`);
-            const body = encodeURIComponent(`Nieuwe aanvraag voor zonnepanelen:\n\nNaam: ${naam}\nE-mail: ${email}\nPostcode: ${postcode}\n\nGraag contact opnemen voor een offerte.`);
-            window.location.href = `mailto:jouw-email@voorbeeld.nl?subject=${subject}&body=${body}`;
-            alert('Bedankt! Uw e-mailprogramma wordt nu geopend om de aanvraag te verzenden.');
-        }
-
+        // --- Hoofdlogica ---
         function recalculateAndRedraw(event) {
             const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
-
+            
+            // Beheer UI-zichtbaarheid
             document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('doel-select-container').classList.toggle('hidden', !heeftZonnepanelen);
-            document.getElementById('quote-form-container').classList.toggle('hidden', heeftZonnepanelen);
             document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
-            
-            if (event && event.target.id === 'capaciteit-selector') {
-                const geselecteerdeCapaciteit = parseFloat(document.getElementById('capaciteit-selector').value);
-                const doel = document.getElementById('doelSelect').value;
-                renderSolarChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit, doel);
-                return;
-            }
 
             const state = { 
                 basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
                 evVerbruikKwh: parseInt(document.getElementById('evSelect').value),
                 wpVerbruikKwh: parseInt(document.getElementById('wpSelect').value),
                 doel: document.getElementById('doelSelect').value,
-                aantalPanelen: parseInt(document.getElementById('aantalPanelen').value) || 0
+                aantalPanelen: parseInt(document.getElementById('aantalPanelen').value) || 0,
+                heeftZonnepanelen: heeftZonnepanelen
             };
-
-            if (heeftZonnepanelen) {
-                const calculations = calculateSolarAdvice(state);
-                updateSolarUI(state, calculations);
-            } else {
-                const calculations = calculateDynamicAdvice(state);
-                updateDynamicUI(state, calculations);
+            
+            // Als alleen de capaciteit-selector verandert, her-render alleen de 24h-grafiek
+            if (event && event.target.id === 'capaciteit-selector') {
+                const geselecteerdeCapaciteit = parseFloat(document.getElementById('capaciteit-selector').value);
+                renderScenarioChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit, state.doel);
+                return;
             }
+
+            // --- Berekeningen ---
+            const calculations = calculateAll(state);
+            updateUI(state, calculations);
         }
-        
-        function calculateSolarAdvice(state) {
+
+        function calculateAll(state) {
             const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
             const verbruikProfiel = [0.02,0.015,0.015,0.015,0.015,0.03,0.08,0.07,0.05,0.04,0.04,0.04,0.05,0.04,0.04,0.05,0.07,0.09,0.1,0.09,0.08,0.06,0.04,0.03];
             const zonneProfiel = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
-            const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
-            const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000;
-            const geschaaldeOpbrengst = zonneProfiel.map(p => p * dagelijkseOpbrengstZonnig);
+
+            // Basis data
             const totaalJaarlijksVerbruik = state.basisVerbruikKwh + state.evVerbruikKwh + state.wpVerbruikKwh;
             const geschaaldVerbruik = verbruikProfiel.map(p => (totaalJaarlijksVerbruik / 365) * p);
-
+            
+            // Opbrengst data (alleen als er panelen zijn)
+            let geschaaldeOpbrengst = verbruikProfiel.map(() => 0);
+            if(state.heeftZonnepanelen){
+                const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
+                const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000;
+                geschaaldeOpbrengst = zonneProfiel.map(p => p * dagelijkseOpbrengstZonnig);
+            }
+            
             laatsteVerbruikData = geschaaldVerbruik;
             laatsteOpbrengstData = geschaaldeOpbrengst;
 
-            const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, opbrengst, i) => sum + Math.max(0, opbrengst - geschaaldVerbruik[i]), 0);
+            // Scenario 1: Zonder panelen
+            const importZonderAlles = totaalJaarlijksVerbruik;
+
+            // Scenario 2: Met panelen, zonder batterij
+            let importMetPanelen = 0;
+            for(let i = 0; i < 24; i++) {
+                if(geschaaldVerbruik[i] > geschaaldeOpbrengst[i]){
+                    importMetPanelen += geschaaldVerbruik[i] - geschaaldeOpbrengst[i];
+                }
+            }
+            importMetPanelen *= 365;
             
+            // Scenario 3: Met panelen en batterij (berekening aanbevolen capaciteit)
+            const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, opbrengst, i) => sum + Math.max(0, opbrengst - geschaaldVerbruik[i]), 0);
             let benodigdeCapaciteit;
             if (state.doel === 'onafhankelijkheid') {
                 benodigdeCapaciteit = maximaalOverschot / RENDEMENT;
@@ -197,66 +194,90 @@
                 for (let i = 0; i < 7; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
                 benodigdeCapaciteit = nachtelijkVerbruik / (DOD * RENDEMENT);
             }
-
             const realistischAanbevolenCapaciteit = Math.min(benodigdeCapaciteit, maximaalOverschot / RENDEMENT);
             
-            return { totaalAanbevolenCapaciteit: realistischAanbevolenCapaciteit, geschaaldTotaalVerbruik: geschaaldVerbruik, geschaaldeOpbrengst };
+            return { realistischAanbevolenCapaciteit, importZonderAlles, importMetPanelen, geschaaldTotaalVerbruik: geschaaldVerbruik, geschaaldeOpbrengst };
         }
-
-        function updateSolarUI(state, calcs) {
-            const aanbevolenRounded = Math.ceil(calcs.totaalAanbevolenCapaciteit / 5) * 5;
-            const totaalAanbevolen = Math.max(5, aanbevolenRounded);
-            document.getElementById('capaciteitResultaat').textContent = `${totaalAanbevolen.toFixed(1)} kWh`;
+        
+        function updateUI(state, calcs){
+             const totaalAanbevolen = Math.max(5, Math.ceil(calcs.realistischAanbevolenCapaciteit / 5) * 5);
             
-            let adviesTekst = ``;
-            if (state.doel === 'besparen') {
-                adviesTekst = `Om de <strong>nacht te overbruggen</strong> en de beste terugverdientijd te realiseren, adviseren we <strong>${totaalAanbevolen.toFixed(1)} kWh</strong>. Deze capaciteit is berekend om uw volledige verbruik van avond tot ochtend te dekken.<br><small>Let op: bij een verbruikspiek hoger dan 5 kW kan er alsnog kortstondig import van het net nodig zijn.</small>`;
+            // Update aanbeveling
+            if(state.heeftZonnepanelen){
+                document.getElementById('capaciteitResultaat').textContent = `${totaalAanbevolen.toFixed(1)} kWh`;
+                let adviesTekst = ``;
+                if (state.doel === 'besparen') {
+                    adviesTekst = `Om de <strong>nacht te overbruggen</strong> en de beste terugverdientijd te realiseren, adviseren we <strong>${totaalAanbevolen.toFixed(1)} kWh</strong>.`;
+                } else {
+                    adviesTekst = `Om <strong>teruglevering te minimaliseren</strong> adviseren we <strong>${totaalAanbevolen.toFixed(1)} kWh</strong>. Dit is berekend om op een zonnige dag vrijwel al uw overtollige zonne-energie op te slaan.`;
+                }
+                document.getElementById('adviesUitleg').innerHTML = adviesTekst;
+                
+                const selector = document.getElementById('capaciteit-selector');
+                selector.innerHTML = '';
+                [5, 10, 15, 20, 25, 30].forEach(cap => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = cap;
+                    optionEl.textContent = `${cap} kWh` + (cap === totaalAanbevolen ? ' (Aanbevolen)' : '');
+                    selector.appendChild(optionEl);
+                    if (cap === totaalAanbevolen) optionEl.selected = true;
+                });
+
             } else {
-                adviesTekst = `Om <strong>teruglevering te minimaliseren</strong> adviseren we <strong>${totaalAanbevolen.toFixed(1)} kWh</strong>. Dit is berekend om op een zonnige dag vrijwel al uw overtollige zonne-energie op te slaan.<br><small>Let op: als uw panelen meer dan 5 kW overschot opwekken, wordt het overige deel teruggeleverd i.v.m. de maximale laadsnelheid.</small>`;
-            }
-             if (calcs.totaalAanbevolenCapaciteit < 4.5 && state.aantalPanelen > 0) {
-                adviesTekst += `<br><br><strong>Tip:</strong> Uw zonnepanelen wekken relatief weinig overschot op. Een batterij is mogelijk niet direct rendabel.`;
+                const dynAanbevolen = Math.max(5, Math.round(((calcs.importZonderAlles / 365) * 0.3) / 0.9 * 2) / 2);
+                document.getElementById('capaciteitResultaat').textContent = `${dynAanbevolen.toFixed(1)} kWh`;
+                document.getElementById('adviesUitleg').innerHTML = `Profiteer van een <strong>dynamisch energiecontract</strong> door op goedkope momenten te laden en op dure momenten te verbruiken.`;
             }
 
-            document.getElementById('adviesUitleg').innerHTML = adviesTekst;
-
-            const selector = document.getElementById('capaciteit-selector');
-            selector.innerHTML = '';
-            const capaciteiten = [5, 10, 15, 20, 25, 30];
-            capaciteiten.forEach(cap => {
-                const optionEl = document.createElement('option');
-                optionEl.value = cap;
-                optionEl.textContent = `${cap} kWh` + (cap === totaalAanbevolen ? ' (Aanbevolen)' : '');
-                selector.appendChild(optionEl);
-                if (cap === totaalAanbevolen) optionEl.selected = true;
-            });
+            // Render alle grafieken
+            renderNoSolarChart(calcs.geschaaldTotaalVerbruik);
             
-            document.querySelector('#chart-card h3').textContent = "Uw Energieprofiel (op een zonnige dag)";
-            document.getElementById('chart-explanation').innerHTML = `De <strong>gele lijn</strong> is uw zon-opbrengst. De <strong>grijze lijn</strong> is uw stroomverbruik.<ul><li><span style="color:#2ecc71;">■</span> Groen: Stroom die u direct van de zon verbruikt.</li><li><span style="color:#3498db;">■</span> Blauw: Stroom die u uit uw opgeslagen batterij verbruikt.</li><li><span style="color:#e74c3c;">■</span> Rood: Stroom die u van het net moet importeren.</li><li><span style="color:#2980b9;">■</span> Donkerblauw (onder nul): Uw batterij wordt opgeladen.</li><li><span style="color:#9b59b6;">■</span> Paars (onder nul): Uw batterij is vol en u levert terug aan het net.</li></ul>`;
-            renderSolarChart(calcs.geschaaldTotaalVerbruik, calcs.geschaaldeOpbrengst, totaalAanbevolen, state.doel);
+            const geselecteerdeCapaciteit = state.heeftZonnepanelen ? totaalAanbevolen : 0;
+            const importMetBatterij = renderScenarioChart(calcs.geschaaldTotaalVerbruik, calcs.geschaaldeOpbrengst, geselecteerdeCapaciteit, state.doel);
+            
+            renderComparisonChart(calcs.importZonderAlles, calcs.importMetPanelen, importMetBatterij);
+        }
+
+        // --- Render Functies voor Grafieken ---
+        function renderNoSolarChart(verbruikData){
+            const ctx = document.getElementById('noSolarChartCanvas')?.getContext('2d');
+            if (!ctx) return;
+            if (noSolarChart) noSolarChart.destroy();
+            noSolarChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: Array.from({length: 24}, (_, i) => `${i}`), datasets: [{ label: 'Import van Net', data: verbruikData, backgroundColor: 'rgba(231, 76, 60, 0.7)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Verbruik (kWh)' } } }, plugins: { legend: { display: false } } }
+            });
         }
         
-        function updateDynamicUI(state, calcs) {
-            const aanbevolen = Math.max(5, Math.round(calcs.aanbevolenCapaciteit * 2) / 2);
-            document.getElementById('capaciteitResultaat').textContent = `${aanbevolen.toFixed(1)} kWh`;
-            document.getElementById('adviesUitleg').innerHTML = `Met een thuisbatterij van <strong>${aanbevolen.toFixed(1)} kWh</strong> kunt u profiteren van een <strong>dynamisch energiecontract</strong>. U laadt de batterij 's nachts met goedkope stroom, en gebruikt deze energie overdag tijdens de dure piekuren.`;
-            document.querySelector('#chart-card h3').textContent = "Voorbeeldprofiel met Dynamisch Contract";
-            document.getElementById('chart-explanation').innerHTML = `De <strong>grijze lijn</strong> is uw stroomverbruik. De <strong>rode balken</strong> tonen de import van het net, ook 's nachts om goedkoop te laden. De <strong>blauwe balken</strong> tonen wanneer u de goedkoop opgeslagen energie verbruikt tijdens dure uren.`;
-            renderDynamicChart(state, aanbevolen);
+        function renderComparisonChart(importZonderAlles, importMetPanelen, importMetBatterij){
+            const ctx = document.getElementById('comparisonChartCanvas')?.getContext('2d');
+            if (!ctx) return;
+            if (comparisonChart) comparisonChart.destroy();
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: { 
+                    labels: ['Zonder Iets', 'Met Panelen', 'Met Panelen & Batterij'], 
+                    datasets: [{ 
+                        label: 'Jaarlijkse Import (kWh)', 
+                        data: [importZonderAlles, importMetPanelen, importMetBatterij], 
+                        backgroundColor: ['rgba(231, 76, 60, 0.7)', 'rgba(241, 196, 15, 0.7)', 'rgba(46, 204, 113, 0.7)'] 
+                    }] 
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'kWh / jaar' } } } }
+            });
         }
-        
-        function renderSolarChart(verbruikData, opbrengstData, batterijCapaciteit, doel) {
+
+        function renderScenarioChart(verbruikData, opbrengstData, batterijCapaciteit, doel) {
             const MAX_CHARGE_RATE_KW = 5;
             let maxOntlading = MAX_CHARGE_RATE_KW;
-            if (doel === 'besparen') {
-                maxOntlading = Infinity;
-            }
+            if (doel === 'besparen') maxOntlading = Infinity;
 
             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
-            if (!ctx) return;
+            if (!ctx) return 0;
             
             batterijLadingData = [];
-            let batterijLading = 0, totalImport = 0, totalExportNaBatt = 0;
+            let batterijLading = 0, totalImport = 0;
             const importData = [], directVerbruikData = [], battVerbruikData = [], battLaadData = [], exportData = [];
             const bruikbareCapaciteit = batterijCapaciteit * 0.95;
 
@@ -279,33 +300,28 @@
                 }
                 directVerbruikData.push(directGebruikVanZon); battVerbruikData.push(ontladingUitBatterij); importData.push(importVanNet);
                 battLaadData.push(-ladingNaarBatterij); exportData.push(-exportNaarNet);
-                totalImport += importVanNet; totalExportNaBatt += exportNaarNet;
-                const percentage = bruikbareCapaciteit > 0 ? (batterijLading / bruikbareCapaciteit) * 100 : 0;
-                batterijLadingData.push(percentage);
+                totalImport += importVanNet;
+                batterijLadingData.push(bruikbareCapaciteit > 0 ? (batterijLading / bruikbareCapaciteit) * 100 : 0);
             }
             
             const maxCharge = Math.max(0, ...batterijLadingData);
             updateBatteryIndicator(maxCharge);
-            document.getElementById('chartSummary').innerHTML = "";
-
+            
             if (scenarioChart) scenarioChart.destroy();
             scenarioChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    labels: Array.from({length: 24}, (_, i) => `${i}`),
                     datasets: [ { label: 'Direct van Zon', data: directVerbruikData, backgroundColor: 'rgba(46, 204, 113, 0.7)' }, { label: 'Uit Batterij', data: battVerbruikData, backgroundColor: 'rgba(52, 152, 219, 0.7)' }, { label: 'Import van Net', data: importData, backgroundColor: 'rgba(231, 76, 60, 0.7)' }, { label: 'Laden Batterij', data: battLaadData, backgroundColor: 'rgba(41, 128, 185, 0.5)' }, { label: 'Export naar Net', data: exportData, backgroundColor: 'rgba(155, 89, 182, 0.6)' }, { type: 'line', label: 'Totaal Verbruik', data: verbruikData, borderColor: 'rgba(127, 140, 141, 0.8)', fill: false, tension: 0.4, pointRadius: 0, borderWidth: 2 }, { type: 'line', label: 'Zon-opbrengst', data: opbrengstData, borderColor: 'rgba(241, 196, 15, 1)', backgroundColor: 'rgba(241, 196, 15, 0.1)', fill: true, tension: 0.4, pointRadius: 0 } ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Energie (kWh)' } } }, plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
                     onHover: (event, chartElement) => {
-                        if (chartElement.length) {
-                            const index = chartElement[0].index;
-                            updateBatteryIndicator(batterijLadingData[index]);
-                        } else {
-                            updateBatteryIndicator(maxCharge);
-                        }
+                        if (chartElement.length) updateBatteryIndicator(batterijLadingData[chartElement[0].index]);
+                        else updateBatteryIndicator(maxCharge);
                     }
                 }
             });
+            return totalImport * 365;
         }
         
         function updateBatteryIndicator(percentage) {
@@ -316,35 +332,6 @@
                 levelElement.style.height = `${cleanPercentage}%`;
                 textElement.textContent = `${Math.round(cleanPercentage)}%`;
             }
-        }
-        
-        function calculateDynamicAdvice(state) {
-            const DOD = 0.95, RENDEMENT = 0.90;
-            const totaalJaarlijksVerbruik = state.basisVerbruikKwh + state.evVerbruikKwh + state.wpVerbruikKwh;
-            const piekVerbruik = (totaalJaarlijksVerbruik / 365) * 0.30;
-            const aanbevolenCapaciteit = piekVerbruik / (DOD * RENDEMENT);
-            return { aanbevolenCapaciteit };
-        }
-        function renderDynamicChart(state, batterijCapaciteit) {
-             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
-            if (!ctx) return;
-            updateBatteryIndicator(0);
-            const verbruikProfiel = [0.02,0.015,0.015,0.015,0.015,0.03,0.08,0.07,0.05,0.04,0.04,0.04,0.05,0.04,0.04,0.05,0.07,0.09,0.1,0.09,0.08,0.06,0.04,0.03];
-            const totaalJaarlijksVerbruik = state.basisVerbruikKwh + state.evVerbruikKwh + state.wpVerbruikKwh;
-            const verbruikData = verbruikProfiel.map(p => (totaalJaarlijksVerbruik / 365) * p);
-            let batterijLading = 0; const importData = [], battVerbruikData = []; const bruikbareCapaciteit = batterijCapaciteit * 0.95;
-            for (let i = 0; i < 24; i++) {
-                let verbruik = verbruikData[i], importVanNet = 0, ontladingUitBatterij = 0;
-                if (i >= 1 && i <= 5) { const kanLaden = bruikbareCapaciteit - batterijLading; const laadStroom = batterijCapaciteit / 4; const lading = Math.min(kanLaden, laadStroom); batterijLading += lading; importVanNet += lading; }
-                if (i >= 17 && i <= 22) { const kanOntladen = batterijLading; ontladingUitBatterij = Math.min(verbruik, kanOntladen); batterijLading -= ontladingUitBatterij; verbruik -= ontladingUitBatterij; }
-                importVanNet += verbruik; importData.push(importVanNet); battVerbruikData.push(ontladingUitBatterij);
-            }
-            if (scenarioChart) scenarioChart.destroy();
-            scenarioChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: Array.from({length: 24}, (_, i) => `${i}:00`), datasets: [ { label: 'Uit Batterij', data: battVerbruikData, backgroundColor: 'rgba(52, 152, 219, 0.7)' }, { label: 'Import van Net', data: importData, backgroundColor: 'rgba(231, 76, 60, 0.7)' }, { type: 'line', label: 'Totaal Verbruik', data: verbruikData, borderColor: 'rgba(127, 140, 141, 0.8)', fill: false, tension: 0.4, pointRadius: 0, borderWidth: 2 }, ] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Energie (kWh)' } } }, plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } } }
-            });
         }
     </script>
 </body>
