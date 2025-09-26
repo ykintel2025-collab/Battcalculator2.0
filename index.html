@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator | Exclupower</title>
+    <title>Thuisbatterij Calculator v1.0 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
@@ -40,7 +40,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Calculator</h1>
+        <h1>Thuisbatterij Calculator v1.0</h1>
         <div class="results-grid">
             <details id="settings-container" open>
                 <summary>Stel uw situatie samen</summary>
@@ -144,11 +144,10 @@
         function recalculateAndRedraw(event) {
             const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
 
-            // Beheer UI-zichtbaarheid van de input-velden
             document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('doel-select-container').classList.toggle('hidden', !heeftZonnepanelen);
-            document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('quote-form-container').classList.toggle('hidden', heeftZonnepanelen);
+            document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
             
             if (event && event.target.id === 'capaciteit-selector') {
                 const geselecteerdeCapaciteit = parseFloat(document.getElementById('capaciteit-selector').value);
@@ -187,20 +186,18 @@
             laatsteVerbruikData = geschaaldVerbruik;
             laatsteOpbrengstData = geschaaldeOpbrengst;
 
-            // Bereken de MAXIMAAL mogelijke opslag op een zonnige dag
             const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, opbrengst, i) => sum + Math.max(0, opbrengst - geschaaldVerbruik[i]), 0);
             
             let benodigdeCapaciteit;
             if (state.doel === 'onafhankelijkheid') {
                 benodigdeCapaciteit = maximaalOverschot / RENDEMENT;
-            } else { // 'besparen'
+            } else { 
                 let nachtelijkVerbruik = 0;
                 for (let i = 19; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
                 for (let i = 0; i < 7; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
                 benodigdeCapaciteit = nachtelijkVerbruik / (DOD * RENDEMENT);
             }
 
-            // NIEUWE, SLIMME LOGICA: Adviseer nooit meer dan wat de zon kan leveren.
             const realistischAanbevolenCapaciteit = Math.min(benodigdeCapaciteit, maximaalOverschot / RENDEMENT);
             
             return { totaalAanbevolenCapaciteit: realistischAanbevolenCapaciteit, geschaaldTotaalVerbruik: geschaaldVerbruik, geschaaldeOpbrengst };
