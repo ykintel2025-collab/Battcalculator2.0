@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v1.1 | Exclupower</title>
+    <title>Thuisbatterij Calculator v1.2 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
@@ -16,11 +16,14 @@
         .result-card { background-color: #f9fbfd; padding: 20px; border-radius: 12px; border: 1px solid #e0e6ed; }
         .main-recommendation { text-align: center; background-color: #eaf9ed; border-color: #2ecc71; grid-column: 1 / -1; }
         .recommendation-content { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .recommendation-details { flex-grow: 1; }
         .setting-row { display: flex; flex-direction: column; align-items: stretch; margin-bottom: 15px; }
         .setting-row label { font-weight: 500; margin-bottom: 5px; text-align: left; }
         .setting-row select, .setting-row input[type="number"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e0e6ed; background-color: white; font-size: 1em; box-sizing: border-box; }
         .hidden { display: none; }
         .chart-canvas-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
+        .chart-summary-text { text-align: center; font-size: 1em; font-weight: 500; color: #1e3a5f; margin-top: 15px; }
+        .chart-summary-text strong { color: #e74c3c; font-size: 1.2em; }
         #capaciteitResultaat { font-size: 2.5em; color: #27ae60; font-weight: 700; display: block; }
         #adviesUitleg { font-size: 0.9em; line-height: 1.5; color: #34495e; max-width: 400px; margin: 10px auto; text-align: center; }
         .battery-container { text-align: center; }
@@ -34,7 +37,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Calculator v1.1</h1>
+        <h1>Thuisbatterij Calculator v1.2</h1>
         <div class="main-grid">
             <div class="settings-panel result-card">
                 <h3>Stel uw situatie samen</h3>
@@ -88,8 +91,9 @@
                 </div>
                 <div class="chart-grid">
                     <div id="no-solar-chart-card" class="result-card">
-                        <h3>1. Situatie Zonder Iets</h3>
+                        <h3>1. Situatie Zonder Zonnepanelen</h3>
                         <div class="chart-canvas-container"><canvas id="noSolarChartCanvas"></canvas></div>
+                        <div id="no-solar-summary" class="chart-summary-text"></div>
                     </div>
                     <div id="comparison-chart-card" class="result-card">
                         <h3>2. Jaarlijkse Stroom van Net</h3>
@@ -125,10 +129,13 @@
         function recalculateAndRedraw(event) {
             const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
             
-            // Beheer UI-zichtbaarheid
             document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('doel-select-container').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
+            document.getElementById('comparison-chart-card').classList.toggle('hidden', !heeftZonnepanelen);
+            document.getElementById('chart-card').classList.toggle('hidden', !heeftZonnepanelen);
+            document.getElementById('recommendation-card').classList.toggle('hidden', !heeftZonnepanelen);
+
 
             const state = { 
                 basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
@@ -139,28 +146,32 @@
                 heeftZonnepanelen: heeftZonnepanelen
             };
             
-            // Als alleen de capaciteit-selector verandert, her-render alleen de 24h-grafiek
             if (event && event.target.id === 'capaciteit-selector') {
                 const geselecteerdeCapaciteit = parseFloat(document.getElementById('capaciteit-selector').value);
-                renderScenarioChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit, state.doel);
+                const importMetBatterij = renderScenarioChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit, state.doel);
+                
+                const importZonderAlles = laatsteVerbruikData.reduce((a, b) => a + b, 0) * 365;
+                let importMetPanelen = 0;
+                for(let i=0; i<24; i++){ if(laatsteVerbruikData[i] > laatsteOpbrengstData[i]) importMetPanelen += laatsteVerbruikData[i] - laatsteOpbrengstData[i]; }
+                importMetPanelen *= 365;
+
+                renderComparisonChart(importZonderAlles, importMetPanelen, importMetBatterij);
                 return;
             }
 
-            // --- Berekeningen ---
             const calculations = calculateAll(state);
             updateUI(state, calculations);
         }
 
         function calculateAll(state) {
             const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
-            const verbruikProfiel = [0.02,0.015,0.015,0.015,0.015,0.03,0.08,0.07,0.05,0.04,0.04,0.04,0.05,0.04,0.04,0.05,0.07,0.09,0.1,0.09,0.08,0.06,0.04,0.03];
+            // GECORRIGEERD VERBRUIKSPROFIEL MET DUIDELIJKE PIEKEN
+            const verbruikProfiel = [0.025,0.02,0.015,0.015,0.02,0.03,0.05,0.06,0.05,0.04,0.035,0.035,0.04,0.035,0.035,0.04,0.06,0.08,0.09,0.08,0.07,0.05,0.04,0.03];
             const zonneProfiel = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
 
-            // Basis data
             const totaalJaarlijksVerbruik = state.basisVerbruikKwh + state.evVerbruikKwh + state.wpVerbruikKwh;
             const geschaaldVerbruik = verbruikProfiel.map(p => (totaalJaarlijksVerbruik / 365) * p);
             
-            // Opbrengst data (alleen als er panelen zijn)
             let geschaaldeOpbrengst = verbruikProfiel.map(() => 0);
             if(state.heeftZonnepanelen){
                 const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
@@ -171,19 +182,12 @@
             laatsteVerbruikData = geschaaldVerbruik;
             laatsteOpbrengstData = geschaaldeOpbrengst;
 
-            // Scenario 1: Zonder panelen
             const importZonderAlles = totaalJaarlijksVerbruik;
 
-            // Scenario 2: Met panelen, zonder batterij
             let importMetPanelen = 0;
-            for(let i = 0; i < 24; i++) {
-                if(geschaaldVerbruik[i] > geschaaldeOpbrengst[i]){
-                    importMetPanelen += geschaaldVerbruik[i] - geschaaldeOpbrengst[i];
-                }
-            }
+            for(let i = 0; i < 24; i++) { if(geschaaldVerbruik[i] > geschaaldeOpbrengst[i]) importMetPanelen += geschaaldVerbruik[i] - geschaaldeOpbrengst[i]; }
             importMetPanelen *= 365;
             
-            // Scenario 3: Met panelen en batterij (berekening aanbevolen capaciteit)
             const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, opbrengst, i) => sum + Math.max(0, opbrengst - geschaaldVerbruik[i]), 0);
             let benodigdeCapaciteit;
             if (state.doel === 'onafhankelijkheid') {
@@ -202,8 +206,8 @@
         function updateUI(state, calcs){
              const totaalAanbevolen = Math.max(5, Math.ceil(calcs.realistischAanbevolenCapaciteit / 5) * 5);
             
-            // Update aanbeveling
             if(state.heeftZonnepanelen){
+                document.getElementById('recommendation-card').classList.remove('hidden');
                 document.getElementById('capaciteitResultaat').textContent = `${totaalAanbevolen.toFixed(1)} kWh`;
                 let adviesTekst = ``;
                 if (state.doel === 'besparen') {
@@ -222,16 +226,13 @@
                     selector.appendChild(optionEl);
                     if (cap === totaalAanbevolen) optionEl.selected = true;
                 });
-
             } else {
-                const dynAanbevolen = Math.max(5, Math.round(((calcs.importZonderAlles / 365) * 0.3) / 0.9 * 2) / 2);
-                document.getElementById('capaciteitResultaat').textContent = `${dynAanbevolen.toFixed(1)} kWh`;
-                document.getElementById('adviesUitleg').innerHTML = `Profiteer van een <strong>dynamisch energiecontract</strong> door op goedkope momenten te laden en op dure momenten te verbruiken.`;
+                 document.getElementById('recommendation-card').classList.add('hidden');
             }
 
-            // Render alle grafieken
             renderNoSolarChart(calcs.geschaaldTotaalVerbruik);
-            
+            document.getElementById('no-solar-summary').innerHTML = `Totaal jaarlijks verbruik van het net: <strong>${Math.round(calcs.importZonderAlles)} kWh</strong>`;
+
             const geselecteerdeCapaciteit = state.heeftZonnepanelen ? totaalAanbevolen : 0;
             const importMetBatterij = renderScenarioChart(calcs.geschaaldTotaalVerbruik, calcs.geschaaldeOpbrengst, geselecteerdeCapaciteit, state.doel);
             
@@ -246,7 +247,7 @@
             noSolarChart = new Chart(ctx, {
                 type: 'bar',
                 data: { labels: Array.from({length: 24}, (_, i) => `${i}`), datasets: [{ label: 'Import van Net', data: verbruikData, backgroundColor: 'rgba(231, 76, 60, 0.7)' }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Verbruik (kWh)' } } }, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false, stacked: true }, y: { stacked: true, title: { display: true, text: 'Verbruik (kWh)' } } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
             });
         }
         
