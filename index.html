@@ -144,15 +144,15 @@
         function recalculateAndRedraw(event) {
             const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
 
-            // Beheer UI-zichtbaarheid
             document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('doel-select-container').classList.toggle('hidden', !heeftZonnepanelen);
             document.getElementById('quote-form-container').classList.toggle('hidden', heeftZonnepanelen);
-             document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
-
+            document.getElementById('capaciteit-keuze-container').classList.toggle('hidden', !heeftZonnepanelen);
+            
             if (event && event.target.id === 'capaciteit-selector') {
                 const geselecteerdeCapaciteit = parseFloat(document.getElementById('capaciteit-selector').value);
-                renderSolarChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit);
+                const doel = document.getElementById('doelSelect').value;
+                renderSolarChart(laatsteVerbruikData, laatsteOpbrengstData, geselecteerdeCapaciteit, doel);
                 return;
             }
 
@@ -233,21 +233,26 @@
                     <li><span style="color:#2980b9;">■</span> Donkerblauw (onder nul): Uw batterij wordt opgeladen.</li>
                     <li><span style="color:#9b59b6;">■</span> Paars (onder nul): Uw batterij is vol en u levert terug aan het net.</li>
                 </ul>`;
-            renderSolarChart(calcs.geschaaldTotaalVerbruik, calcs.geschaaldeOpbrengst, totaalAanbevolen);
+            renderSolarChart(calcs.geschaaldTotaalVerbruik, calcs.geschaaldeOpbrengst, totaalAanbevolen, state.doel);
         }
         
         function updateDynamicUI(state, calcs) {
             const aanbevolen = Math.max(5, Math.round(calcs.aanbevolenCapaciteit * 2) / 2);
             document.getElementById('capaciteitResultaat').textContent = `${aanbevolen.toFixed(1)} kWh`;
             document.getElementById('adviesUitleg').innerHTML = `Met een thuisbatterij van <strong>${aanbevolen.toFixed(1)} kWh</strong> kunt u profiteren van een <strong>dynamisch energiecontract</strong>. U laadt de batterij 's nachts met goedkope stroom, en gebruikt deze energie overdag tijdens de dure piekuren.`;
-            
             document.querySelector('#chart-card h3').textContent = "Voorbeeldprofiel met Dynamisch Contract";
             document.getElementById('chart-explanation').innerHTML = `De <strong>grijze lijn</strong> is uw stroomverbruik. De <strong>rode balken</strong> tonen de import van het net, ook 's nachts om goedkoop te laden. De <strong>blauwe balken</strong> tonen wanneer u de goedkoop opgeslagen energie verbruikt tijdens dure uren.`;
             renderDynamicChart(state, aanbevolen);
         }
         
-        function renderSolarChart(verbruikData, opbrengstData, batterijCapaciteit) {
+        function renderSolarChart(verbruikData, opbrengstData, batterijCapaciteit, doel) {
             const MAX_CHARGE_RATE_KW = 5;
+            let maxOntlading = MAX_CHARGE_RATE_KW;
+            // Voor het 'besparen' doel, verwijderen we de ontlaadlimiet voor een beter visueel resultaat
+            if (doel === 'besparen') {
+                maxOntlading = Infinity;
+            }
+
             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
             if (!ctx) return;
             
@@ -269,7 +274,7 @@
                 } else if (netto < 0) {
                     const tekort = -netto;
                     const kanOntladen = batterijLading;
-                    ontladingUitBatterij = Math.min(tekort, kanOntladen, MAX_CHARGE_RATE_KW);
+                    ontladingUitBatterij = Math.min(tekort, kanOntladen, maxOntlading);
                     batterijLading -= ontladingUitBatterij;
                     importVanNet = tekort - ontladingUitBatterij;
                 }
@@ -282,7 +287,7 @@
             
             const maxCharge = Math.max(0, ...batterijLadingData);
             updateBatteryIndicator(maxCharge);
-            document.getElementById('chartSummary').innerHTML = ""; // Summary is niet meer nodig door de toelichting
+            document.getElementById('chartSummary').innerHTML = "";
 
             if (scenarioChart) scenarioChart.destroy();
             scenarioChart = new Chart(ctx, {
@@ -329,7 +334,7 @@
             renderDynamicChart(state, aanbevolen);
         }
         function renderDynamicChart(state, batterijCapaciteit) {
-            const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
+             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
             if (!ctx) return;
             document.getElementById('chartSummary').innerHTML = "";
             updateBatteryIndicator(0);
