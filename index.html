@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v7.0 | Exclupower</title>
+    <title>Thuisbatterij Calculator v7.1 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
@@ -22,12 +22,16 @@
         #capaciteitResultaat { font-size: 3em; color: #27ae60; font-weight: 700; }
         .chart-canvas-container { position: relative; height: 350px; width: 100%; margin-top: 20px; }
         #lead-gen-button { width: 100%; padding: 15px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s ease; margin-top: 10px; }
+        .energy-balance { list-style: none; padding: 0; margin: 0; }
+        .energy-balance li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e6ed; font-size: 1em; }
+        .energy-balance li:last-child { border-bottom: none; font-weight: bold; }
+        .energy-balance span { color: #1e3a5f; }
         @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Dashboard v7.0</h1>
+        <h1>Thuisbatterij Dashboard v7.1</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
@@ -73,7 +77,15 @@
                     <h3>Aanbevolen Capaciteit</h3>
                     <div id="capaciteitResultaat">- kWh</div>
                 </div>
-                <div id="comparison-card" class="result-card">
+                <div id="balance-card" class="result-card">
+                    <h3>Jaarlijkse Energiebalans</h3>
+                    <ul class="energy-balance">
+                        <li>Totaal Jaarverbruik: <span id="jaarverbruik-output">- kWh</span></li>
+                        <li>Geschatte Jaaropbrengst: <span id="jaaropbrengst-output">- kWh</span></li>
+                        <li>Netto Resultaat: <span id="netto-resultaat-output">- kWh</span></li>
+                    </ul>
+                </div>
+                <div id="comparison-card" class="result-card full-width">
                     <h3>Jaarlijkse Net-import</h3>
                     <div class="chart-canvas-container" style="height:250px"><canvas id="comparisonChartCanvas"></canvas></div>
                 </div>
@@ -144,12 +156,12 @@
             document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
             document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
             
-            const resultsPanel = document.getElementById('results-panel');
-            resultsPanel.classList.toggle('hidden', state.aantalPanelen === 0 && !state.heeftZonnepanelen && !state.interesseZonnepanelen);
+            const showResults = state.aantalPanelen > 0 || (state.heeftZonnepanelen && state.aantalPanelen > 0) || (!state.heeftZonnepanelen && !state.interesseZonnepanelen);
+            document.getElementById('results-panel').classList.toggle('hidden', !showResults);
         }
 
         function calculateAll(state) {
-            const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
+            const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400, JAAROPBRENGST_FACTOR = 0.9;
             const evVerbruikPerUur = new Array(24).fill(0);
             if (state.evVerbruikKwh > 0) {
                 const dagelijksEvVerbruik = state.evVerbruikKwh / 365;
@@ -157,14 +169,17 @@
                 for (let i = 22; i < 24; i++) evVerbruikPerUur[i] = laadvermogen;
                 for (let i = 0; i < 4; i++) evVerbruikPerUur[i] = laadvermogen;
             }
+            const totaalJaarlijksVerbruik = state.basisVerbruikKwh + state.evVerbruikKwh;
             const geschaaldVerbruik = new Array(24).fill(0);
             for (let i = 0; i < 24; i++) { 
                 geschaaldVerbruik[i] = (E1A_PROFIEL[i] * (state.basisVerbruikKwh / 365)) + evVerbruikPerUur[i];
             }
             
             let geschaaldeOpbrengst = new Array(24).fill(0);
+            let totaleJaaropbrengst = 0;
             if(state.aantalPanelen > 0){
                 const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
+                totaleJaaropbrengst = totaalWp * JAAROPBRENGST_FACTOR;
                 const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000;
                 geschaaldeOpbrengst = ZONNEPROFIEL.map(p => p * dagelijkseOpbrengstZonnig);
             }
@@ -179,7 +194,7 @@
             }
             const aanbevolenCapaciteit = Math.max(5, Math.ceil(benodigdeCapaciteit / 5) * 5);
             
-            return { aanbevolenCapaciteit, geschaaldVerbruik, geschaaldeOpbrengst };
+            return { aanbevolenCapaciteit, totaalJaarlijksVerbruik, totaleJaaropbrengst, geschaaldVerbruik, geschaaldeOpbrengst };
         }
         
         function updateUI(state, calcs){
@@ -187,8 +202,12 @@
             if(state.aantalPanelen === 0) {
                  document.getElementById('capaciteitResultaat').textContent = `N.v.t.`;
             }
+
+            document.getElementById('jaarverbruik-output').textContent = `${Math.round(calcs.totaalJaarlijksVerbruik)} kWh`;
+            document.getElementById('jaaropbrengst-output').textContent = `${Math.round(calcs.totaleJaaropbrengst)} kWh`;
+            const netto = calcs.totaleJaaropbrengst - calcs.totaalJaarlijksVerbruik;
+            document.getElementById('netto-resultaat-output').innerHTML = `${netto >= 0 ? '+' : ''}${Math.round(netto)} kWh <span style="color: ${netto >= 0 ? 'green' : 'red'}">(${netto >= 0 ? 'overschot' : 'tekort'})</span>`;
             
-            // Simuleer de scenario's voor de vergelijkingsgrafiek
             const simMetBatterij = simulateDay(calcs.geschaaldVerbruik, calcs.geschaaldeOpbrengst, calcs.aanbevolenCapaciteit);
             const simZonderBatterij = simulateDay(calcs.geschaaldVerbruik, calcs.geschaaldeOpbrengst, 0);
             const simZonderAlles = simulateDay(calcs.geschaaldVerbruik, new Array(24).fill(0), 0);
@@ -222,8 +241,8 @@
                 result.verbruikZon.push(directGebruik);
                 result.verbruikBatterij.push(ontlading);
                 result.verbruikNet.push(verbruik);
-                result.opbrengstLaden.push(-lading); // Negatief voor weergave onder nul
-                result.opbrengstExport.push(-opbrengst); // Negatief voor weergave onder nul
+                result.opbrengstLaden.push(-lading);
+                result.opbrengstExport.push(-opbrengst);
             }
             return result;
         }
@@ -240,7 +259,7 @@
             comparisonChart = new Chart(ctx, {
                 type: 'bar',
                 data: { 
-                    labels: ['Zonder Panelen', 'Met Panelen', 'Met Panelen & Batterij'], 
+                    labels: ['Zonder Panelen & Batterij', 'Met Panelen', 'Met Panelen & Batterij'], 
                     datasets: [{ 
                         label: 'Jaarlijkse Import (kWh)', 
                         data: [importZonderAlles, importMetPanelen, importMetBatterij], 
@@ -266,6 +285,7 @@
                         { label: 'Direct Verbruik van Zon', data: sim.verbruikZon, backgroundColor: 'rgba(46, 204, 113, 0.8)', stack: 'Verbruik' },
                         { label: 'Opbrengst naar Batterij', data: sim.opbrengstLaden, backgroundColor: 'rgba(243, 156, 18, 0.8)', stack: 'Opbrengst' },
                         { label: 'Opbrengst naar Net (Export)', data: sim.opbrengstExport, backgroundColor: 'rgba(155, 89, 182, 0.8)', stack: 'Opbrengst' },
+                        { type: 'line', label: 'Zon-opbrengst', data: calcs.geschaaldeOpbrengst, borderColor: 'rgba(241, 196, 15, 1)', fill: true, pointRadius: 0, borderWidth: 2, backgroundColor: 'rgba(241, 196, 15, 0.1)'}
                     ]
                 },
                 options: { 
