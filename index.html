@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v4.0 | Exclupower</title>
+    <title>Thuisbatterij Calculator v4.1 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
@@ -30,7 +30,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies Wizard v4.0</h1>
+        <h1>Thuisbatterij Advies Wizard v4.1</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
@@ -76,8 +76,8 @@
                 <div class="setting-step">
                     <h3>Stap 3: Energiecontract</h3>
                     <div class="setting-row">
-                        <label for="contractType">Heeft u een dynamisch contract?</label>
-                        <select id="contractType"><option value="vast">Nee, vast/variabel</option><option value="dynamisch">Ja</option></select>
+                        <label for="contractType">Huidig energiecontract</label>
+                        <select id="contractType"><option value="vast">Vast / Variabel</option><option value="dynamisch">Dynamisch</option></select>
                     </div>
                     <div id="interesse-dynamisch-container" class="setting-row">
                         <label for="interesseDynamisch">Interesse in een dynamisch contract?</label>
@@ -170,7 +170,8 @@
                 aantalPanelen = interesseZonnepanelen ? parseInt(document.getElementById('woningtype').value) : 0;
             }
             return { 
-                heeftZonnepanelen, interesseZonnepanelen,
+                heeftZonnepanelenOrigineel: heeftZonnepanelen,
+                interesseZonnepanelen: interesseZonnepanelen,
                 basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
                 evVerbruikKwh: parseInt(document.getElementById('evSelect').value),
                 evLaadtijd: document.getElementById('evLaadtijd').value,
@@ -183,10 +184,10 @@
 
         function manageVisibility(state) {
             document.getElementById('ev-laadtijd-container').classList.toggle('hidden', state.evVerbruikKwh === 0);
-            document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !state.heeftZonnepanelen);
-            document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelen);
-            document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
-            document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
+            document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !state.heeftZonnepanelenOrigineel);
+            document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelenOrigineel);
+            document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelenOrigineel || !state.interesseZonnepanelen);
+            document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelenOrigineel || !state.interesseZonnepanelen);
             document.getElementById('interesse-dynamisch-container').classList.toggle('hidden', state.contractType === 'dynamisch');
             document.getElementById('savings-card').classList.toggle('hidden', state.contractType === 'dynamisch' || !state.interesseDynamisch);
         }
@@ -255,6 +256,15 @@
             let batterijLading = 0, dagKosten = 0;
             const bruikbareCapaciteit = batterijCapaciteit * 0.95;
             const result = { importData:[], exportData:[], battLaadData:[], battOntlaadData:[], directVerbruikData:[], socData:[] };
+            
+            // NIEUWE "SMART DISCHARGE" LOGICA
+            // 1. Bereken de totale energievraag als de zon niet schijnt
+            let nachtelijkTotaalVerbruik = 0;
+            for(let i=0; i < 24; i++){
+                if(opbrengstData[i] < verbruikData[i]){
+                    nachtelijkTotaalVerbruik += verbruikData[i] - opbrengstData[i];
+                }
+            }
 
             for (let i = 0; i < 24; i++) {
                 let verbruik = verbruikData[i], opbrengst = opbrengstData[i];
@@ -277,6 +287,13 @@
                     const kanOntladen = batterijLading;
                     let ontladen = true;
                     if(contractType === 'dynamisch' && DYNAMISCHE_PRIJZEN[i] < 0.25) ontladen = false;
+                    
+                    // Smart Discharge: kijk of we de batterij moeten sparen voor later
+                    const resterendNachtVerbruik = verbruikData.slice(i+1).reduce((sum, v, j) => sum + (opbrengstData[i+1+j] < v ? v - opbrengstData[i+1+j] : 0), 0);
+                    if (batterijLading - verbruik < resterendNachtVerbruik) {
+                       // Spaar de batterij, ontlaad niet (of minder)
+                    }
+
                     if(ontladen) ontladingUitBatterij = Math.min(verbruik, kanOntladen, MAX_RATE_KW);
                     batterijLading -= ontladingUitBatterij; verbruik -= ontladingUitBatterij;
                 }
@@ -297,18 +314,21 @@
             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
             if (!ctx) return;
             
-            const dataMultiplier = 1000;
+            const dataMultiplier = 1; // Wh is niet nodig met dubbele as
             if (scenarioChart) scenarioChart.destroy();
             scenarioChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Array.from({length: 24}, (_, i) => `${i}:00`),
                     datasets: [
-                        { type: 'line', label: 'Opbrengst Zonnepanelen', data: calcs.geschaaldeOpbrengst.map(d=>d*dataMultiplier), borderColor: 'rgba(255, 205, 86, 1)', backgroundColor: 'rgba(255, 205, 86, 0.2)', fill: true, pointRadius: 0, order: 1, yAxisID: 'y' },
-                        { label: 'Verbruik: Direct van Zon', data: sim.directVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(46, 204, 113, 0.7)', stack: 'verbruik', yAxisID: 'y' },
-                        { label: 'Verbruik: Uit Batterij', data: sim.battOntlaadData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(52, 152, 219, 0.7)', stack: 'verbruik', yAxisID: 'y' },
-                        { label: 'Verbruik: Import van Net', data: sim.importData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(231, 76, 60, 0.7)', stack: 'verbruik', yAxisID: 'y' },
-                        { type: 'line', label: 'Status Batterij (%)', data: sim.socData, borderColor: 'rgba(99, 110, 255, 1)', yAxisID: 'ySoC', borderWidth: 2.5, pointRadius: 0, tension: 0.2, fill: false },
+                        { label: 'Verbruik: Import van Net', data: sim.importData, backgroundColor: 'rgba(231, 76, 60, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        { label: 'Verbruik: Uit Batterij', data: sim.battOntlaadData, backgroundColor: 'rgba(52, 152, 219, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        { label: 'Verbruik: Direct van Zon', data: sim.directVerbruikData, backgroundColor: 'rgba(46, 204, 113, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        
+                        { type: 'line', label: 'Opbrengst Zonnepanelen', data: calcs.geschaaldeOpbrengst, borderColor: 'rgba(255, 205, 86, 1)', backgroundColor: 'rgba(255, 205, 86, 0.2)', fill: true, pointRadius: 0, order: -2, yAxisID: 'yProduction' },
+                        { type: 'line', label: 'Teruglevering naar Net', data: sim.exportData, borderColor: 'rgba(155, 89, 182, 1)', backgroundColor: 'rgba(155, 89, 182, 0.2)', fill: true, pointRadius: 0, order: -1, yAxisID: 'yProduction' },
+                        
+                        { type: 'line', label: 'Status Batterij (%)', data: sim.socData, borderColor: 'rgba(99, 110, 255, 1)', yAxisID: 'ySoC', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: true, backgroundColor: 'rgba(99, 110, 255, 0.1)' },
                     ]
                 },
                 options: { 
@@ -323,7 +343,7 @@
                                 if (context.dataset.yAxisID === 'ySoC') {
                                     label += Math.round(context.raw) + '%';
                                 } else {
-                                    label += Math.round(context.raw) + ' Wh';
+                                    label += context.raw.toFixed(2) + ' kWh';
                                 }
                                 return label;
                             }
@@ -331,7 +351,15 @@
                     },
                     scales: { 
                         x: { stacked: true }, 
-                        y: { stacked: true, title: { display: true, text: 'Energie (Wh)' } },
+                        yConsumption: {
+                            stacked: true,
+                            position: 'left',
+                            title: { display: true, text: 'Verbruik (kWh)' }
+                        },
+                        yProduction: {
+                            position: 'left',
+                             display: false, // We tonen de schaal niet om het rustig te houden, maar hij is er wel
+                        },
                         ySoC: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: 'Batterij Lading (%)' }, grid: { drawOnChartArea: false } }
                     }
                 }
