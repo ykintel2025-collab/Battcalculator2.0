@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v4.1 | Exclupower</title>
+    <title>Thuisbatterij Calculator v4.2 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
@@ -30,7 +30,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies Wizard v4.1</h1>
+        <h1>Thuisbatterij Advies Wizard v4.2</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
@@ -216,24 +216,19 @@
             let geschaaldeOpbrengst = new Array(24).fill(0);
             if(state.aantalPanelen > 0){
                 const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
-                const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000;
+                const dagelijkseOpbrengstZonnig = (totaalWp * 5) / 1000; // Vereenvoudigde schatting
                 geschaaldeOpbrengst = ZONNEPROFIEL.map(p => p * dagelijkseOpbrengstZonnig);
             }
             
-            let benodigdeCapaciteit = 0;
-            if (state.aantalPanelen > 0) {
-                const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, o, i) => sum + Math.max(0, o - geschaaldVerbruik[i]), 0);
-                let nachtelijkVerbruik = 0;
-                for (let i = 19; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-                for (let i = 0; i < 7; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-                benodigdeCapaciteit = Math.min(nachtelijkVerbruik / (DOD * RENDEMENT), maximaalOverschot / RENDEMENT);
-            } else {
-                 let piekVerbruik = 0;
-                for (let i = 17; i < 23; i++) { piekVerbruik += geschaaldVerbruik[i]; }
-                benodigdeCapaciteit = piekVerbruik / DOD;
-            }
-            const aanbevolenCapaciteit = Math.max(5, Math.ceil(benodigdeCapaciteit / 5) * 5);
-            
+            // Bereken de benodigde capaciteit voor de nacht, rekening houdend met de opbrengst van de zon in de ochtend
+            let nachtelijkVerbruik = 0;
+            // Dit is het verbruik als de zon niet schijnt (of minder dan verbruik)
+            for (let i = 18; i < 24; i++) { nachtelijkVerbruik += Math.max(0, geschaaldVerbruik[i] - geschaaldeOpbrengst[i]); }
+            for (let i = 0; i < 8; i++) { nachtelijkVerbruik += Math.max(0, geschaaldVerbruik[i] - geschaaldeOpbrengst[i]); }
+
+            const benodigdeCapaciteit = nachtelijkVerbruik / (DOD * RENDEMENT);
+            const aanbevolenCapaciteit = Math.max(5, Math.ceil(benodigdeCapaciteit / 5) * 5); // Rond af naar boven op 5 kWh
+
             return { aanbevolenCapaciteit, geschaaldVerbruik, geschaaldeOpbrengst };
         }
         
@@ -252,57 +247,102 @@
         }
 
         function simulateDay(verbruikData, opbrengstData, batterijCapaciteit, contractType) {
-            const MAX_RATE_KW = 5;
-            let batterijLading = 0, dagKosten = 0;
-            const bruikbareCapaciteit = batterijCapaciteit * 0.95;
+            const MAX_RATE_KW = 5; // Maximaal laad/ontlaadvermogen per uur
+            const DOD = 0.95; // Depth of Discharge
+            const RENDEMENT = 0.90; // Laad/ontlaad rendement
+            let batterijLading = 0;
+            const bruikbareCapaciteit = batterijCapaciteit * DOD * RENDEMENT; // Bruikbare capaciteit
+
+            let dagKosten = 0;
             const result = { importData:[], exportData:[], battLaadData:[], battOntlaadData:[], directVerbruikData:[], socData:[] };
             
-            // NIEUWE "SMART DISCHARGE" LOGICA
-            // 1. Bereken de totale energievraag als de zon niet schijnt
-            let nachtelijkTotaalVerbruik = 0;
-            for(let i=0; i < 24; i++){
-                if(opbrengstData[i] < verbruikData[i]){
-                    nachtelijkTotaalVerbruik += verbruikData[i] - opbrengstData[i];
-                }
+            // STAP 1: Bereken de totale nachtelijke energiebehoefte voor smart discharge
+            const startNachtUur = 18; // 18:00
+            const eindNachtUur = 8;   // 08:00
+            let benodigdeNachtEnergie = 0;
+            for(let i = startNachtUur; i < 24; i++) {
+                benodigdeNachtEnergie += Math.max(0, verbruikData[i] - opbrengstData[i]);
+            }
+            for(let i = 0; i < eindNachtUur; i++) {
+                benodigdeNachtEnergie += Math.max(0, verbruikData[i] - opbrengstData[i]);
             }
 
+            // STAP 2: Loop door de uren en simuleer
             for (let i = 0; i < 24; i++) {
-                let verbruik = verbruikData[i], opbrengst = opbrengstData[i];
+                let verbruik = verbruikData[i];
+                let opbrengst = opbrengstData[i];
                 let importVanNet = 0, exportNaarNet = 0, ladingNaarBatterij = 0, ontladingUitBatterij = 0;
 
-                if(contractType === 'dynamisch' && DYNAMISCHE_PRIJZEN[i] < 0.15 && opbrengst === 0){
-                    const kanLaden = bruikbareCapaciteit - batterijLading;
-                    const lading = Math.min(kanLaden, MAX_RATE_KW);
-                    batterijLading += lading; importVanNet += lading;
+                // 1. Laden vanaf het net bij dynamisch contract en lage prijzen (indien geen zon)
+                if(contractType === 'dynamisch' && DYNAMISCHE_PRIJZEN[i] < 0.15 && opbrengst <= 0.05){ // Laagste prijzen, bijna geen zon
+                    const kanLadenVanNet = bruikbareCapaciteit - batterijLading;
+                    const actueelLaden = Math.min(kanLadenVanNet, MAX_RATE_KW);
+                    batterijLading += actueelLaden;
+                    importVanNet += actueelLaden; // Dit is verbruik van het net
                 }
+
+                // 2. Direct verbruik van zon
                 const directGebruikVanZon = Math.min(verbruik, opbrengst);
                 verbruik -= directGebruikVanZon;
-                const overschot = opbrengst - directGebruikVanZon;
-                if (overschot > 0) {
-                    const kanLaden = bruikbareCapaciteit - batterijLading;
-                    ladingNaarBatterij = Math.min(overschot, kanLaden, MAX_RATE_KW);
-                    batterijLading += ladingNaarBatterij; exportNaarNet = overschot - ladingNaarBatterij;
+                opbrengst -= directGebruikVanZon;
+
+                // 3. Overtollige zon in batterij, anders export
+                if (opbrengst > 0) {
+                    const kanLadenMetZon = bruikbareCapaciteit - batterijLading;
+                    ladingNaarBatterij = Math.min(opbrengst, kanLadenMetZon, MAX_RATE_KW);
+                    batterijLading += ladingNaarBatterij;
+                    exportNaarNet = opbrengst - ladingNaarBatterij;
                 }
+                
+                // 4. Verbruik vanuit batterij of net (SMARTER DISCHARGE)
                 if (verbruik > 0) {
-                    const kanOntladen = batterijLading;
-                    let ontladen = true;
-                    if(contractType === 'dynamisch' && DYNAMISCHE_PRIJZEN[i] < 0.25) ontladen = false;
+                    let resterendeVraag = verbruik;
                     
-                    // Smart Discharge: kijk of we de batterij moeten sparen voor later
-                    const resterendNachtVerbruik = verbruikData.slice(i+1).reduce((sum, v, j) => sum + (opbrengstData[i+1+j] < v ? v - opbrengstData[i+1+j] : 0), 0);
-                    if (batterijLading - verbruik < resterendNachtVerbruik) {
-                       // Spaar de batterij, ontlaad niet (of minder)
+                    // Bereken hoeveel er nog nodig is voor de rest van de nacht/ochtend
+                    let toekomstigVerbruikZonderZon = 0;
+                    if (i >= startNachtUur || i < eindNachtUur) { // Alleen 's nachts en 's ochtends vroeg
+                        for (let j = i + 1; j < 24; j++) {
+                            toekomstigVerbruikZonderZon += Math.max(0, verbruikData[j] - opbrengstData[j]);
+                        }
+                        for (let j = 0; j < eindNachtUur && j <= i; j++) { // Voorbij middernacht, verbruik van begin dag
+                            if (j > i) toekomstigVerbruikZonderZon += Math.max(0, verbruikData[j] - opbrengstData[j]);
+                        }
                     }
 
-                    if(ontladen) ontladingUitBatterij = Math.min(verbruik, kanOntladen, MAX_RATE_KW);
-                    batterijLading -= ontladingUitBatterij; verbruik -= ontladingUitBatterij;
+                    // Bepaal de ontlading
+                    let maxOntladingNu = Math.min(resterendeVraag, batterijLading, MAX_RATE_KW);
+                    
+                    // Smart Discharge Logic: Ontlaad alleen als we de batterij niet te snel leegmaken voor later,
+                    // tenzij de vraag nu groot is en de batterij het aankan.
+                    let ontladenRatio = 1; // Hoeveel van de beschikbare ontlading mag gebruikt worden
+                    if (toekomstigVerbruikZonderZon > 0 && batterijLading - maxOntladingNu < toekomstigVerbruikZonderZon) {
+                         // Probeer de resterende nachtelijke vraag te dekken
+                         ontladenRatio = batterijLading / (toekomstigVerbruikZonderZon + resterendeVraag);
+                         ontladenRatio = Math.max(0.2, Math.min(1, ontladenRatio)); // Minimaal 20%, max 100%
+                    }
+
+                    ontladingUitBatterij = maxOntladingNu * ontladenRatio;
+                    ontladingUitBatterij = Math.min(ontladingUitBatterij, batterijLading); // Zorg dat we niet meer ontladen dan er is
+                    
+                    // Zorg dat we niet te veel van de batterij vragen als de import goedkoop is (dynamisch)
+                    if(contractType === 'dynamisch' && DYNAMISCHE_PRIJZEN[i] < 0.25) {
+                        // Bij lage dynamische prijzen liever van het net dan batterij leegtrekken
+                        ontladingUitBatterij = Math.min(ontladingUitBatterij, resterendeVraag * 0.5); // Max 50% van de vraag uit batterij bij lage prijs
+                    }
+
+                    batterijLading -= ontladingUitBatterij;
+                    resterendeVraag -= ontladingUitBatterij;
+                    importVanNet += resterendeVraag; // Wat overblijft, wordt geïmporteerd
                 }
-                importVanNet += verbruik;
+
+                // Kostenberekening
                 dagKosten += (importVanNet * (contractType === 'dynamisch' ? DYNAMISCHE_PRIJZEN[i] : VAST_TARIEF));
                 dagKosten -= (exportNaarNet * TERUGLEVER_TARIEF);
 
-                result.importData.push(importVanNet); result.exportData.push(exportNaarNet);
-                result.battLaadData.push(ladingNaarBatterij); result.battOntlaadData.push(ontladingUitBatterij);
+                result.importData.push(importVanNet); 
+                result.exportData.push(exportNaarNet);
+                result.battLaadData.push(ladingNaarBatterij); 
+                result.battOntlaadData.push(ontladingUitBatterij);
                 result.directVerbruikData.push(directGebruikVanZon);
                 result.socData.push(bruikbareCapaciteit > 0 ? (batterijLading / bruikbareCapaciteit) * 100 : 0);
             }
@@ -314,20 +354,22 @@
             const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
             if (!ctx) return;
             
-            const dataMultiplier = 1; // Wh is niet nodig met dubbele as
+            const dataMultiplier = 1; 
             if (scenarioChart) scenarioChart.destroy();
             scenarioChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Array.from({length: 24}, (_, i) => `${i}:00`),
                     datasets: [
-                        { label: 'Verbruik: Import van Net', data: sim.importData, backgroundColor: 'rgba(231, 76, 60, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
-                        { label: 'Verbruik: Uit Batterij', data: sim.battOntlaadData, backgroundColor: 'rgba(52, 152, 219, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
-                        { label: 'Verbruik: Direct van Zon', data: sim.directVerbruikData, backgroundColor: 'rgba(46, 204, 113, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        { label: 'Verbruik: Import van Net', data: sim.importData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(231, 76, 60, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        { label: 'Verbruik: Uit Batterij', data: sim.battOntlaadData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(52, 152, 219, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
+                        { label: 'Verbruik: Direct van Zon', data: sim.directVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(46, 204, 113, 0.7)', stack: 'verbruik', yAxisID: 'yConsumption' },
                         
-                        { type: 'line', label: 'Opbrengst Zonnepanelen', data: calcs.geschaaldeOpbrengst, borderColor: 'rgba(255, 205, 86, 1)', backgroundColor: 'rgba(255, 205, 86, 0.2)', fill: true, pointRadius: 0, order: -2, yAxisID: 'yProduction' },
-                        { type: 'line', label: 'Teruglevering naar Net', data: sim.exportData, borderColor: 'rgba(155, 89, 182, 1)', backgroundColor: 'rgba(155, 89, 182, 0.2)', fill: true, pointRadius: 0, order: -1, yAxisID: 'yProduction' },
+                        // Zonne-opbrengst en teruglevering als lijnen bovenop
+                        { type: 'line', label: 'Opbrengst Zonnepanelen', data: calcs.geschaaldeOpbrengst.map(d=>d*dataMultiplier), borderColor: 'rgba(255, 205, 86, 1)', backgroundColor: 'rgba(255, 205, 86, 0.2)', fill: true, pointRadius: 0, order: -2, yAxisID: 'yConsumption' },
+                        { type: 'line', label: 'Teruglevering naar Net', data: sim.exportData.map(d=>d*dataMultiplier), borderColor: 'rgba(155, 89, 182, 1)', backgroundColor: 'rgba(155, 89, 182, 0.2)', fill: true, pointRadius: 0, order: -1, yAxisID: 'yConsumption' },
                         
+                        // Batterijstatus als area chart op de rechter Y-as
                         { type: 'line', label: 'Status Batterij (%)', data: sim.socData, borderColor: 'rgba(99, 110, 255, 1)', yAxisID: 'ySoC', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: true, backgroundColor: 'rgba(99, 110, 255, 0.1)' },
                     ]
                 },
@@ -354,13 +396,17 @@
                         yConsumption: {
                             stacked: true,
                             position: 'left',
-                            title: { display: true, text: 'Verbruik (kWh)' }
+                            title: { display: true, text: 'Energie (kWh)' },
+                            min: 0 // Zorg dat de y-as altijd bij 0 begint
                         },
-                        yProduction: {
-                            position: 'left',
-                             display: false, // We tonen de schaal niet om het rustig te houden, maar hij is er wel
-                        },
-                        ySoC: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: 'Batterij Lading (%)' }, grid: { drawOnChartArea: false } }
+                        ySoC: { 
+                            type: 'linear', 
+                            position: 'right', 
+                            min: 0, 
+                            max: 125, // Aangepast naar 125%
+                            title: { display: true, text: 'Batterij Lading (%)' }, 
+                            grid: { drawOnChartArea: false } 
+                        }
                     }
                 }
             });
