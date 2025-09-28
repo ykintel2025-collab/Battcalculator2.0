@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v3.2 | Exclupower</title>
+    <title>Thuisbatterij Calculator v3.3 | Exclupower</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; box-sizing: border-box; }
@@ -20,8 +20,6 @@
         .setting-row select, .setting-row input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e0e6ed; background-color: white; font-size: 1em; box-sizing: border-box; }
         .hidden { display: none; }
         .chart-canvas-container { position: relative; height: 400px; width: 100%; margin-top: 10px; }
-        .savings-display { text-align: center; padding: 20px; background-color: #eaf9ed; border-radius: 12px; margin-top: 20px; }
-        .savings-display .amount { font-size: 2.5em; font-weight: 700; color: #27ae60; display: block; }
         #capaciteitResultaat { font-size: 2.5em; color: #27ae60; font-weight: 700; display: block; margin-top: 10px; }
         #lead-gen-button { width: 100%; padding: 15px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s ease; margin-top: 10px; }
         #lead-gen-button:hover { background-color: #2ecc71; }
@@ -30,7 +28,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies Wizard v3.2</h1>
+        <h1>Thuisbatterij Advies Wizard v3.3</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
@@ -69,7 +67,7 @@
                         </div>
                         <div id="woningtype-container" class="setting-row">
                             <label for="woningtype">Type woning</label>
-                            <select id="woningtype"><option value="8">Appartement (schatting: 8 panelen)</option><option value="12" selected>Tussenwoning (schatting: 12 panelen)</option><option value="16">Hoekwoning (schatting: 16 panelen)</option><option value="20">Vrijstaand (schatting: 20 panelen)</option></select>
+                            <select id="woningtype"><option value="8">Appartement (8 panelen)</option><option value="12" selected>Tussenwoning (12 panelen)</option><option value="16">Hoekwoning (16 panelen)</option><option value="20">Vrijstaand (20 panelen)</option></select>
                         </div>
                     </div>
                 </div>
@@ -92,7 +90,7 @@
             </div>
             <div class="results-panel">
                 <div id="recommendation-card" class="result-card main-recommendation">
-                    <h2 style="margin-top:0;">Uw Aanbeveling</h2>
+                    <h2 style="margin-top:0;">Uw Aanbevolen Batterij</h2>
                     <strong id="capaciteitResultaat">- kWh</strong>
                 </div>
                 <div id="charts-container" class="result-card">
@@ -131,7 +129,7 @@
             body += `Basisverbruik: ${state.basisVerbruikKwh} kWh\n`;
             body += `EV-verbruik: ${state.evVerbruikKwh} kWh (Laadtijd: ${state.evLaadtijd})\n`;
             body += `Warmtepomp-verbruik: ${state.wpVerbruikKwh} kWh\n`;
-            body += `Geschat aantal panelen: ${state.aantalPanelen} stuks\n`;
+            body += `Aantal panelen (ingevuld/geschat): ${state.aantalPanelen} stuks\n`;
             body += `Aanbevolen batterij: ${calcs.aanbevolenCapaciteit.toFixed(1)} kWh\n`;
             
             const subject = encodeURIComponent(`Offerte-aanvraag Zonnepanelen & Batterij`);
@@ -158,7 +156,7 @@
             }
 
             return { 
-                heeftZonnepanelen: heeftZonnepanelen,
+                heeftZonnepanelenOrigineel: heeftZonnepanelen,
                 interesseZonnepanelen: interesseZonnepanelen,
                 basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
                 evVerbruikKwh: parseInt(document.getElementById('evSelect').value),
@@ -171,15 +169,15 @@
 
         function manageVisibility(state) {
             document.getElementById('ev-laadtijd-container').classList.toggle('hidden', state.evVerbruikKwh === 0);
-            document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !state.heeftZonnepanelen);
-            document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelen);
-            document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
-            document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
+            document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !state.heeftZonnepanelenOrigineel);
+            document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelenOrigineel);
+            document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelenOrigineel || !state.interesseZonnepanelen);
+            document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelenOrigineel || !state.interesseZonnepanelen);
         }
 
         function calculateAll(state) {
             const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
-
+            
             const basisVerbruikPerUur = E1A_PROFIEL.map(p => (state.basisVerbruikKwh / 365) * p);
             const evVerbruikPerUur = new Array(24).fill(0);
             if (state.evVerbruikKwh > 0) {
@@ -214,7 +212,7 @@
                 for (let i = 19; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
                 for (let i = 0; i < 7; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
                 benodigdeCapaciteit = Math.min(nachtelijkVerbruik / (DOD * RENDEMENT), maximaalOverschot / RENDEMENT);
-            } else { // Advies voor dynamisch contract zonder panelen
+            } else {
                  let piekVerbruik = 0;
                 for (let i = 17; i < 23; i++) { piekVerbruik += geschaaldVerbruik[i]; }
                 benodigdeCapaciteit = piekVerbruik / DOD;
@@ -276,18 +274,33 @@
                 data: {
                     labels: Array.from({length: 24}, (_, i) => `${i}:00`),
                     datasets: [
-                        { label: 'Direct van Zon', data: sim.directVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(46, 204, 113, 0.7)' },
-                        { label: 'Uit Batterij', data: sim.battVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(52, 152, 219, 0.7)' },
-                        { label: 'Import van Net', data: sim.importData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(231, 76, 60, 0.7)' },
-                        { label: 'Laden Batterij', data: sim.battLaadData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(243, 156, 18, 0.7)' },
-                        { label: 'Export naar Net', data: sim.exportData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(155, 89, 182, 0.6)' },
-                        { type: 'line', label: 'Totaal Verbruik', data: calcs.geschaaldVerbruik.map(d=>d*dataMultiplier), borderColor: 'rgba(127, 140, 141, 0.8)', fill: false, borderWidth: 2.5, pointRadius: 0 },
-                        { type: 'line', label: 'Zon-opbrengst', data: calcs.geschaaldeOpbrengst.map(d=>d*dataMultiplier), borderColor: 'rgba(241, 196, 15, 1)', fill: true, pointRadius: 0 }
+                        { label: 'Import van Net', data: sim.importData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(231, 76, 60, 0.7)', yAxisID: 'yConsumption' },
+                        { label: 'Uit Batterij', data: sim.battVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(52, 152, 219, 0.7)', yAxisID: 'yConsumption' },
+                        { label: 'Direct van Zon', data: sim.directVerbruikData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(46, 204, 113, 0.7)', yAxisID: 'yConsumption' },
+                        { label: 'Laden Batterij', data: sim.battLaadData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(243, 156, 18, 0.7)', yAxisID: 'yProduction' },
+                        { label: 'Export naar Net', data: sim.exportData.map(d=>d*dataMultiplier), backgroundColor: 'rgba(155, 89, 182, 0.6)', yAxisID: 'yProduction' },
+                        { type: 'line', label: 'Totaal Verbruik', data: calcs.geschaaldVerbruik.map(d=>d*dataMultiplier), borderColor: 'rgba(127, 140, 141, 0.8)', yAxisID: 'yConsumption', borderWidth: 2.5, pointRadius: 0 },
+                        { type: 'line', label: 'Zon-opbrengst', data: calcs.geschaaldeOpbrengst.map(d=>d*dataMultiplier), borderColor: 'rgba(241, 196, 15, 1)', yAxisID: 'yProduction', fill: true, pointRadius: 0 }
                     ]
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
-                    scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Energie (Wh)' } } },
+                    scales: { 
+                        x: { stacked: true }, 
+                        yConsumption: {
+                            stacked: true,
+                            position: 'left',
+                            title: { display: true, text: 'Verbruik (Wh)' }
+                        },
+                        yProduction: {
+                            stacked: true,
+                            position: 'right',
+                            title: { display: true, text: 'Opbrengst & Opslag (Wh)' },
+                            grid: {
+                                drawOnChartArea: false, // Alleen de verbruik-as heeft gridlijnen
+                            },
+                        }
+                    },
                     plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index' } }
                 }
             });
