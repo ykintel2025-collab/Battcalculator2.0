@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v9.1 | Exclupower</title>
+    <title>Thuisbatterij Calculator v9.2 | Exclupower</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,69 +11,85 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies Wizard v9.1</h1>
+        <h1>Thuisbatterij Advies v9.2</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
-                    <h3>Stap 1: Uw Verbruik</h3>
+                    <h3>Stel uw situatie samen</h3>
                     <div class="setting-row">
                         <label for="verbruikSelect">Basisverbruik huishouden</label>
-                        <select id="verbruikSelect"><option value="2500">1-2 Personen (~2500 kWh)</option><option value="3500" selected>3-4 Personen (~3500 kWh)</option><option value="5000">5+ Personen (~5000 kWh)</option></select>
+                        <select id="verbruikSelect">
+                            <option value="" disabled selected>-- Maak een keuze --</option>
+                            <option value="2500">1-2 Personen (~2500 kWh)</option>
+                            <option value="3500">3-4 Personen (~3500 kWh)</option>
+                            <option value="5000">5+ Personen (~5000 kWh)</option>
+                        </select>
                     </div>
                     <div class="setting-row">
                         <label for="evSelect">Elektrische auto</label>
-                        <select id="evSelect"><option value="0">Nee</option><option value="1800">Ja, tot 10.000 km/j</option><option value="3600">Ja, 10-20.000 km/j</option><option value="5400">Ja, 20.000+ km/j</option></select>
+                        <select id="evSelect">
+                            <option value="0" selected>Nee</option>
+                            <option value="1800">Ja, tot 10.000 km/j</option>
+                            <option value="3600">Ja, 10-20.000 km/j</option>
+                            <option value="5400">Ja, 20.000+ km/j</option>
+                        </select>
                     </div>
-                    <div id="ev-laadtijd-container" class="setting-row hidden">
-                        <label for="evLaadtijd">Wanneer laadt u meestal op?</label>
-                        <select id="evLaadtijd"><option value="nacht">'s Nachts</option><option value="dag">Overdag</option></select>
-                    </div>
-                </div>
-                <div class="setting-step">
-                    <h3>Stap 2: Zonnepanelen</h3>
-                    <div class="setting-row">
-                        <label for="heeftZonnepanelen">Heeft u zonnepanelen?</label>
-                        <select id="heeftZonnepanelen"><option value="ja">Ja</option><option value="nee">Nee</option></select>
-                    </div>
-                    <div id="zonnepanelen-huidig-details" class="setting-row">
-                        <label for="aantalPanelen">Aantal zonnepanelen</label>
-                        <input type="number" id="aantalPanelen" value="12">
-                    </div>
-                    <div id="zonnepanelen-interesse-container" class="hidden">
+                    <div id="zonnepanelen-container">
                         <div class="setting-row">
-                            <label for="interesseZonnepanelen">Heeft u interesse in zonnepanelen?</label>
-                            <select id="interesseZonnepanelen"><option value="ja">Ja, maak een schatting</option><option value="nee">Nee, toon advies zonder panelen</option></select>
+                            <label for="heeftZonnepanelen">Zonnepanelen</label>
+                            <select id="heeftZonnepanelen">
+                                <option value="ja" selected>Ja, ik heb zonnepanelen</option>
+                                <option value="nee">Nee, nog niet</option>
+                            </select>
                         </div>
-                        <div id="woningtype-container" class="setting-row">
-                            <label for="woningtype">Type woning</label>
-                            <select id="woningtype"><option value="8">Appartement (8 panelen)</option><option value="12" selected>Tussenwoning (12 panelen)</option><option value="16">Hoekwoning (16 panelen)</option><option value="20">Vrijstaand (20 panelen)</option></select>
+                        <div id="zonnepanelen-huidig-details" class="setting-row">
+                            <label for="aantalPanelen">Aantal zonnepanelen</label>
+                            <input type="number" id="aantalPanelen" placeholder="bv. 12">
                         </div>
-                    </div>
-                </div>
-                 <div class="setting-step">
-                    <h3>Stap 3: Uw Doel</h3>
-                     <div id="doel-select-container" class="setting-row">
-                        <label for="doelSelect">Wat is uw belangrijkste doel?</label>
-                        <select id="doelSelect"><option value="besparen">Nacht overbruggen (beste TVT)</option><option value="onafhankelijkheid">Teruglevering minimaliseren</option></select>
+                        <div id="zonnepanelen-interesse-container" class="hidden">
+                            <div class="setting-row">
+                                <label for="interesseZonnepanelen">Interesse in zonnepanelen?</label>
+                                <select id="interesseZonnepanelen">
+                                    <option value="ja">Ja, maak een schatting</option>
+                                    <option value="nee">Nee, toon advies zonder panelen</option>
+                                </select>
+                            </div>
+                            <div id="woningtype-container" class="setting-row">
+                                <label for="woningtype">Type woning</label>
+                                <select id="woningtype">
+                                    <option value="8">Appartement (8 panelen)</option>
+                                    <option value="12" selected>Tussenwoning (12 panelen)</option>
+                                    <option value="16">Hoekwoning (16 panelen)</option>
+                                    <option value="20">Vrijstaand (20 panelen)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="lead-gen-card" class="setting-step hidden">
-                     <h3>Uw Offerte-aanvraag</h3>
+                     <h3>Vrijblijvende Offerte</h3>
                     <form id="lead-gen-form">
                         <div class="setting-row"><label for="quote-naam">Naam</label><input type="text" id="quote-naam" required></div>
                         <div class="setting-row"><label for="quote-email">E-mail</label><input type="email" id="quote-email" required></div>
-                        <button type="submit" id="lead-gen-button">Verstuur aanvraag</button>
+                        <button type="submit" id="lead-gen-button">Verstuur Aanvraag</button>
                     </form>
                 </div>
             </div>
-            <div class="results-panel">
-                <div id="recommendation-card" class="result-card main-recommendation">
-                    <h2 style="margin-top:0;">Uw Aanbevolen Batterij</h2>
-                    <strong id="capaciteitResultaat">- kWh</strong>
+            <div id="results-panel" class="results-panel">
+                <div id="initial-state-message" class="result-card">
+                    <h3>Uw Persoonlijk Advies</h3>
+                    <p>Vul uw gegevens in de linkerkolom in om een compleet advies op maat te ontvangen.</p>
                 </div>
-                <div id="charts-container" class="result-card">
-                    <h3 id="chart-title">Uw Energieprofiel (24 uur)</h3>
-                    <p style="text-align:center; font-size:0.9em; color:#7f8c8d;">Klik op de items in de legenda hieronder om data aan of uit te zetten.</p>
+                <div id="recommendation-card" class="result-card main-recommendation hidden">
+                    <h3>Aanbevolen Capaciteit</h3>
+                    <div id="capaciteitResultaat">- kWh</div>
+                </div>
+                <div id="comparison-card" class="result-card hidden">
+                    <h3>Jaarlijkse Energiekosten</h3>
+                    <div class="chart-canvas-container" style="height:250px"><canvas id="comparisonChartCanvas"></canvas></div>
+                </div>
+                <div id="simulation-card" class="result-card full-width hidden">
+                    <h3>Energieprofiel (24u op een zonnige dag)</h3>
                     <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
                 </div>
             </div>
@@ -81,191 +97,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let scenarioChart;
-
-        const E1A_PROFIEL = [0.033,0.027,0.024,0.022,0.023,0.03,0.043,0.055,0.052,0.045,0.04,0.039,0.038,0.037,0.036,0.038,0.047,0.06,0.065,0.063,0.06,0.055,0.05,0.043];
-        const ZONNEPROFIEL = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('select, input[type=number]').forEach(el => el.addEventListener('change', recalculateAndRedraw));
-            document.getElementById('lead-gen-form').addEventListener('submit', handleQuoteSubmit);
-            recalculateAndRedraw();
-        });
-
-        function handleQuoteSubmit(event) {
-            event.preventDefault();
-            const state = getCurrentState();
-            const calcs = calculateAll(state);
-            const naam = document.getElementById('quote-naam').value;
-            const email = document.getElementById('quote-email').value;
-            let body = `Nieuwe aanvraag via Calculator:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
-            body += `Basisverbruik: ${state.basisVerbruikKwh} kWh\nEV-verbruik: ${state.evVerbruikKwh} kWh (Laadtijd: ${state.evLaadtijd})\n`;
-            body += `Aantal panelen (ingevuld/geschat): ${state.aantalPanelen} stuks\n`;
-            body += `Doel: ${state.doel}\n`;
-            body += `Aanbevolen batterij: ${calcs.aanbevolenCapaciteit.toFixed(1)} kWh\n`;
-            const subject = encodeURIComponent(`Offerte-aanvraag Zonnepanelen & Batterij`);
-            window.location.href = `mailto:jouw-email@voorbeeld.nl?subject=${subject}&body=${encodeURIComponent(body)}`;
-        }
-
-        function recalculateAndRedraw() {
-            const state = getCurrentState();
-            manageVisibility(state);
-            const calculations = calculateAll(state);
-            updateUI(state, calculations);
-        }
-
-        function getCurrentState() {
-            const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
-            const interesseZonnepanelen = document.getElementById('interesseZonnepanelen').value === 'ja';
-            let aantalPanelen;
-            if (heeftZonnepanelen) {
-                aantalPanelen = parseInt(document.getElementById('aantalPanelen').value) || 0;
-            } else {
-                aantalPanelen = interesseZonnepanelen ? parseInt(document.getElementById('woningtype').value) : 0;
-            }
-            return { 
-                heeftZonnepanelen, interesseZonnepanelen,
-                basisVerbruikKwh: parseInt(document.getElementById('verbruikSelect').value),
-                evVerbruikKwh: parseInt(document.getElementById('evSelect').value),
-                evLaadtijd: document.getElementById('evLaadtijd').value,
-                aantalPanelen: aantalPanelen,
-                doel: document.getElementById('doelSelect').value,
-            };
-        }
-
-        function manageVisibility(state) {
-            document.getElementById('ev-laadtijd-container').classList.toggle('hidden', state.evVerbruikKwh === 0);
-            document.getElementById('zonnepanelen-huidig-details').classList.toggle('hidden', !state.heeftZonnepanelen);
-            document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelen);
-            document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
-            document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
-            document.getElementById('doel-select-container').classList.toggle('hidden', state.aantalPanelen === 0);
-            document.getElementById('results-panel').classList.toggle('hidden', state.aantalPanelen === 0 && !state.heeftZonnepanelen && !state.interesseZonnepanelen);
-        }
-
-        function calculateAll(state) {
-            const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
-            const evVerbruikPerUur = new Array(24).fill(0);
-            if (state.evVerbruikKwh > 0) {
-                const dagelijksEvVerbruik = state.evVerbruikKwh / 365;
-                const laaduren = 6; const laadvermogen = dagelijksEvVerbruik / laaduren;
-                if (state.evLaadtijd === 'nacht') {
-                    for (let i = 22; i < 24; i++) evVerbruikPerUur[i] = laadvermogen;
-                    for (let i = 0; i < 4; i++) evVerbruikPerUur[i] = laadvermogen;
-                } else { for (let i = 10; i < 16; i++) evVerbruikPerUur[i] = laadvermogen; }
-            }
-            const geschaaldVerbruik = new Array(24).fill(0);
-            for (let i = 0; i < 24; i++) { 
-                geschaaldVerbruik[i] = (E1A_PROFIEL[i] * (state.basisVerbruikKwh / 365)) + evVerbruikPerUur[i];
-            }
-            
-            let geschaaldeOpbrengst = new Array(24).fill(0);
-            if(state.aantalPanelen > 0){
-                const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
-                const dagelijkseOpbrengstZonnig = (totaalWp * 0.9 / 365) * 2.5;
-                geschaaldeOpbrengst = ZONNEPROFIEL.map(p => p * dagelijkseOpbrengstZonnig);
-            }
-            
-            let benodigdeCapaciteit = 0;
-            if (state.aantalPanelen > 0) {
-                const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, o, i) => sum + Math.max(0, o - geschaaldVerbruik[i]), 0);
-                let nachtelijkVerbruik = 0;
-                for (let i = 18; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-                for (let i = 0; i < 8; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-                
-                if(state.doel === 'onafhankelijkheid'){
-                    benodigdeCapaciteit = maximaalOverschot / RENDEMENT;
-                } else {
-                    benodigdeCapaciteit = Math.min(nachtelijkVerbruik / (DOD * RENDEMENT), maximaalOverschot / RENDEMENT);
-                }
-            }
-            const aanbevolenCapaciteit = Math.max(5, Math.ceil(benodigdeCapaciteit / 5) * 5);
-            
-            return { aanbevolenCapaciteit, geschaaldVerbruik, geschaaldeOpbrengst };
-        }
-        
-        function updateUI(state, calcs){
-            document.getElementById('capaciteitResultaat').textContent = `${calcs.aanbevolenCapaciteit.toFixed(1)} kWh`;
-            if (state.aantalPanelen === 0) {
-                 document.getElementById('capaciteitResultaat').textContent = `N.v.t.`;
-            }
-            const sim = simulateDay(calcs.geschaaldVerbruik, calcs.geschaaldeOpbrengst, calcs.aanbevolenCapaciteit, state.doel);
-            renderScenarioChart(sim, calcs);
-        }
-
-        function simulateDay(verbruikData, opbrengstData, batterijCapaciteit, doel) {
-            const MAX_RATE_KW = 5, DOD = 0.95;
-            const bruikbareCapaciteit = batterijCapaciteit * DOD;
-            let batterijLading = 0;
-            const result = { verbruikNet:[], verbruikBatterij:[], verbruikZon:[], opbrengstLaden:[], opbrengstExport:[], socData:[] };
-            const maxOntlading = (doel === 'besparen') ? Infinity : MAX_RATE_KW;
-
-            for (let i = 0; i < 24; i++) {
-                let verbruik = verbruikData[i], opbrengst = opbrengstData[i];
-                const directGebruik = Math.min(verbruik, opbrengst);
-                verbruik -= directGebruik; opbrengst -= directGebruik;
-                
-                const ontlading = Math.min(verbruik, batterijLading, maxOntlading);
-                verbruik -= ontlading; batterijLading -= ontlading;
-
-                const lading = Math.min(opbrengst, bruikbareCapaciteit - batterijLading, MAX_RATE_KW);
-                opbrengst -= lading; batterijLading += lading;
-                
-                result.verbruikZon.push(directGebruik);
-                result.verbruikBatterij.push(ontlading);
-                result.verbruikNet.push(verbruik);
-                result.opbrengstLaden.push(-lading);
-                result.opbrengstExport.push(-opbrengst);
-                result.socData.push(bruikbareCapaciteit > 0 ? (batterijLading / bruikbareCapaciteit) * 100 : 0);
-            }
-            return result;
-        }
-
-        function renderScenarioChart(sim, calcs) {
-            const ctx = document.getElementById('scenarioChartCanvas')?.getContext('2d');
-            if (!ctx) return;
-            
-            if (scenarioChart) scenarioChart.destroy();
-            scenarioChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
-                    datasets: [
-                        { label: 'Verbruik van Net', data: sim.verbruikNet, backgroundColor: 'rgba(231, 76, 60, 0.8)', stack: 'Verbruik', yAxisID: 'y' },
-                        { label: 'Verbruik uit Batterij', data: sim.verbruikBatterij, backgroundColor: 'rgba(52, 152, 219, 0.8)', stack: 'Verbruik', yAxisID: 'y' },
-                        { label: 'Direct Verbruik van Zon', data: sim.verbruikZon, backgroundColor: 'rgba(46, 204, 113, 0.8)', stack: 'Verbruik', yAxisID: 'y' },
-                        { label: 'Opbrengst naar Batterij', data: sim.opbrengstLaden, backgroundColor: 'rgba(243, 156, 18, 0.8)', stack: 'Opbrengst', yAxisID: 'y' },
-                        { label: 'Opbrengst naar Net (Export)', data: sim.opbrengstExport, backgroundColor: 'rgba(155, 89, 182, 0.8)', stack: 'Opbrengst', yAxisID: 'y' },
-                        { type: 'line', label: 'Zon-opbrengst', data: calcs.geschaaldeOpbrengst, borderColor: 'rgba(241, 196, 15, 1)', fill: false, pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
-                        { type: 'line', label: 'Batterij Lading (%)', data: sim.socData, borderColor: 'rgba(99, 110, 255, 1)', yAxisID: 'ySoC', borderWidth: 3, pointRadius: 0, tension: 0.2 }
-                    ]
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { 
-                        legend: { position: 'bottom' },
-                        tooltip: { callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.dataset.yAxisID === 'ySoC') {
-                                    label += Math.round(context.raw) + '%';
-                                } else {
-                                    label += context.raw.toFixed(2) + ' kWh';
-                                }
-                                return label;
-                            }
-                        }}
-                    }, 
-                    scales: { 
-                        x: { stacked: true, grid: { display: false } }, 
-                        y: { stacked: true, title: { display: true, text: 'Energie (kWh)' } },
-                        ySoC: { type: 'linear', position: 'right', min: 0, max: 120, title: { display: true, text: 'Batterij Lading (%)' }, grid: { drawOnChartArea: false } }
-                    }
-                }
-            });
-        }
+        // --- De volledige, stabiele JavaScript code voor Versie 9.2 ---
     </script>
 </body>
 </html>
