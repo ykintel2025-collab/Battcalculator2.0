@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v9.0 | Exclupower</title>
+    <title>Thuisbatterij Calculator v9.1 | Exclupower</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies Wizard v9.0</h1>
+        <h1>Thuisbatterij Advies Wizard v9.1</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
@@ -167,15 +167,17 @@
             }
             
             let benodigdeCapaciteit = 0;
-            const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, o, i) => sum + Math.max(0, o - geschaaldVerbruik[i]), 0);
-            let nachtelijkVerbruik = 0;
-            for (let i = 18; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-            for (let i = 0; i < 8; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
-            
-            if(state.doel === 'onafhankelijkheid'){
-                 benodigdeCapaciteit = maximaalOverschot / RENDEMENT;
-            } else {
-                 benodigdeCapaciteit = Math.min(nachtelijkVerbruik / (DOD * RENDEMENT), maximaalOverschot / RENDEMENT);
+            if (state.aantalPanelen > 0) {
+                const maximaalOverschot = geschaaldeOpbrengst.reduce((sum, o, i) => sum + Math.max(0, o - geschaaldVerbruik[i]), 0);
+                let nachtelijkVerbruik = 0;
+                for (let i = 18; i < 24; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
+                for (let i = 0; i < 8; i++) { nachtelijkVerbruik += geschaaldVerbruik[i]; }
+                
+                if(state.doel === 'onafhankelijkheid'){
+                    benodigdeCapaciteit = maximaalOverschot / RENDEMENT;
+                } else {
+                    benodigdeCapaciteit = Math.min(nachtelijkVerbruik / (DOD * RENDEMENT), maximaalOverschot / RENDEMENT);
+                }
             }
             const aanbevolenCapaciteit = Math.max(5, Math.ceil(benodigdeCapaciteit / 5) * 5);
             
@@ -192,13 +194,10 @@
         }
 
         function simulateDay(verbruikData, opbrengstData, batterijCapaciteit, doel) {
-            const MAX_RATE_KW = 5;
-            const DOD = 0.95;
+            const MAX_RATE_KW = 5, DOD = 0.95;
             const bruikbareCapaciteit = batterijCapaciteit * DOD;
             let batterijLading = 0;
             const result = { verbruikNet:[], verbruikBatterij:[], verbruikZon:[], opbrengstLaden:[], opbrengstExport:[], socData:[] };
-
-            // Voor het "besparen" doel, verwijderen we de ontlaadlimiet voor een perfecte nacht
             const maxOntlading = (doel === 'besparen') ? Infinity : MAX_RATE_KW;
 
             for (let i = 0; i < 24; i++) {
