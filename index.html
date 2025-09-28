@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v9.2 | Exclupower</title>
+    <title>Thuisbatterij Calculator v10.0 | Exclupower</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,58 +11,43 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Advies v9.2</h1>
+        <h1>Thuisbatterij Dashboard v10.0</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <div class="setting-step">
-                    <h3>Stel uw situatie samen</h3>
+                    <h3>Uw Situatie</h3>
                     <div class="setting-row">
                         <label for="verbruikSelect">Basisverbruik huishouden</label>
-                        <select id="verbruikSelect">
-                            <option value="" disabled selected>-- Maak een keuze --</option>
-                            <option value="2500">1-2 Personen (~2500 kWh)</option>
-                            <option value="3500">3-4 Personen (~3500 kWh)</option>
-                            <option value="5000">5+ Personen (~5000 kWh)</option>
-                        </select>
+                        <select id="verbruikSelect"><option value="2500">1-2 Personen</option><option value="3500" selected>3-4 Personen</option><option value="5000">5+ Personen</option></select>
                     </div>
                     <div class="setting-row">
                         <label for="evSelect">Elektrische auto</label>
-                        <select id="evSelect">
-                            <option value="0" selected>Nee</option>
-                            <option value="1800">Ja, tot 10.000 km/j</option>
-                            <option value="3600">Ja, 10-20.000 km/j</option>
-                            <option value="5400">Ja, 20.000+ km/j</option>
-                        </select>
+                        <select id="evSelect"><option value="0">Nee</option><option value="1800">Ja, tot 10.000 km/j</option><option value="3600">Ja, 10-20.000 km/j</option><option value="5400">Ja, 20.000+ km/j</option></select>
                     </div>
-                    <div id="zonnepanelen-container">
+                    <div id="ev-laadtijd-container" class="setting-row hidden">
+                        <label for="evLaadtijd">Wanneer laadt u meestal op?</label>
+                        <select id="evLaadtijd"><option value="nacht">'s Nachts</option><option value="dag">Overdag</option></select>
+                    </div>
+                    <div class="setting-row">
+                        <label for="wpSelect">Warmtepomp</label>
+                        <select id="wpSelect"><option value="0">Nee</option><option value="1500">Ja</option></select>
+                    </div>
+                     <div class="setting-row">
+                        <label for="heeftZonnepanelen">Zonnepanelen</label>
+                        <select id="heeftZonnepanelen"><option value="ja">Ja, ik heb zonnepanelen</option><option value="nee">Nee, nog niet</option></select>
+                    </div>
+                    <div id="zonnepanelen-huidig-details" class="setting-row">
+                        <label for="aantalPanelen">Aantal zonnepanelen</label>
+                        <input type="number" id="aantalPanelen" value="12">
+                    </div>
+                    <div id="zonnepanelen-interesse-container" class="hidden">
                         <div class="setting-row">
-                            <label for="heeftZonnepanelen">Zonnepanelen</label>
-                            <select id="heeftZonnepanelen">
-                                <option value="ja" selected>Ja, ik heb zonnepanelen</option>
-                                <option value="nee">Nee, nog niet</option>
-                            </select>
+                            <label for="interesseZonnepanelen">Interesse in zonnepanelen?</label>
+                            <select id="interesseZonnepanelen"><option value="ja">Ja, maak een schatting</option><option value="nee">Nee, toon advies zonder panelen</option></select>
                         </div>
-                        <div id="zonnepanelen-huidig-details" class="setting-row">
-                            <label for="aantalPanelen">Aantal zonnepanelen</label>
-                            <input type="number" id="aantalPanelen" placeholder="bv. 12">
-                        </div>
-                        <div id="zonnepanelen-interesse-container" class="hidden">
-                            <div class="setting-row">
-                                <label for="interesseZonnepanelen">Interesse in zonnepanelen?</label>
-                                <select id="interesseZonnepanelen">
-                                    <option value="ja">Ja, maak een schatting</option>
-                                    <option value="nee">Nee, toon advies zonder panelen</option>
-                                </select>
-                            </div>
-                            <div id="woningtype-container" class="setting-row">
-                                <label for="woningtype">Type woning</label>
-                                <select id="woningtype">
-                                    <option value="8">Appartement (8 panelen)</option>
-                                    <option value="12" selected>Tussenwoning (12 panelen)</option>
-                                    <option value="16">Hoekwoning (16 panelen)</option>
-                                    <option value="20">Vrijstaand (20 panelen)</option>
-                                </select>
-                            </div>
+                        <div id="woningtype-container" class="setting-row">
+                            <label for="woningtype">Type woning</label>
+                            <select id="woningtype"><option value="8">Appartement (8 panelen)</option><option value="12" selected>Tussenwoning (12 panelen)</option><option value="16">Hoekwoning (16 panelen)</option><option value="20">Vrijstaand (20 panelen)</option></select>
                         </div>
                     </div>
                 </div>
@@ -76,19 +61,15 @@
                 </div>
             </div>
             <div id="results-panel" class="results-panel">
-                <div id="initial-state-message" class="result-card">
-                    <h3>Uw Persoonlijk Advies</h3>
-                    <p>Vul uw gegevens in de linkerkolom in om een compleet advies op maat te ontvangen.</p>
-                </div>
-                <div id="recommendation-card" class="result-card main-recommendation hidden">
+                <div id="recommendation-card" class="result-card main-recommendation">
                     <h3>Aanbevolen Capaciteit</h3>
                     <div id="capaciteitResultaat">- kWh</div>
                 </div>
-                <div id="comparison-card" class="result-card hidden">
+                <div id="comparison-card" class="result-card">
                     <h3>Jaarlijkse Energiekosten</h3>
                     <div class="chart-canvas-container" style="height:250px"><canvas id="comparisonChartCanvas"></canvas></div>
                 </div>
-                <div id="simulation-card" class="result-card full-width hidden">
+                <div id="simulation-card" class="result-card full-width">
                     <h3>Energieprofiel (24u op een zonnige dag)</h3>
                     <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
                 </div>
@@ -96,8 +77,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // --- De volledige, stabiele JavaScript code voor Versie 9.2 ---
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
