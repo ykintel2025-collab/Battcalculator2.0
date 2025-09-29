@@ -46,10 +46,8 @@ function recalculateAndRedraw() {
 function getCurrentState() {
     const heeftZonnepanelen = document.getElementById('heeftZonnepanelen').value === 'ja';
     const interesseZonnepanelen = document.getElementById('interesseZonnepanelen').value === 'ja';
-    let aantalPanelen;
-    if (heeftZonnepanelen) {
-        aantalPanelen = parseInt(document.getElementById('aantalPanelen').value);
-    } else {
+    let aantalPanelen = parseInt(document.getElementById('aantalPanelen').value);
+    if (!heeftZonnepanelen) {
         aantalPanelen = interesseZonnepanelen ? parseInt(document.getElementById('woningtype').value) : 0;
     }
     return { 
