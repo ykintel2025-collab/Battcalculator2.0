@@ -1,82 +1,152 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v10.0 | Exclupower</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Thuisbatterij Dashboard v10.0</h1>
-        <div class="main-grid">
-            <div class="settings-panel">
-                <div class="setting-step">
-                    <h3>Uw Situatie</h3>
-                    <div class="setting-row">
-                        <label for="verbruikSelect">Basisverbruik huishouden</label>
-                        <select id="verbruikSelect"><option value="2500">1-2 Personen</option><option value="3500" selected>3-4 Personen</option><option value="5000">5+ Personen</option></select>
-                    </div>
-                    <div class="setting-row">
-                        <label for="evSelect">Elektrische auto</label>
-                        <select id="evSelect"><option value="0">Nee</option><option value="1800">Ja, tot 10.000 km/j</option><option value="3600">Ja, 10-20.000 km/j</option><option value="5400">Ja, 20.000+ km/j</option></select>
-                    </div>
-                    <div id="ev-laadtijd-container" class="setting-row hidden">
-                        <label for="evLaadtijd">Wanneer laadt u meestal op?</label>
-                        <select id="evLaadtijd"><option value="nacht">'s Nachts</option><option value="dag">Overdag</option></select>
-                    </div>
-                    <div class="setting-row">
-                        <label for="wpSelect">Warmtepomp</label>
-                        <select id="wpSelect"><option value="0">Nee</option><option value="1500">Ja</option></select>
-                    </div>
-                     <div class="setting-row">
-                        <label for="heeftZonnepanelen">Zonnepanelen</label>
-                        <select id="heeftZonnepanelen"><option value="ja">Ja, ik heb zonnepanelen</option><option value="nee">Nee, nog niet</option></select>
-                    </div>
-                    <div id="zonnepanelen-huidig-details" class="setting-row">
-                        <label for="aantalPanelen">Aantal zonnepanelen</label>
-                        <input type="number" id="aantalPanelen" value="12">
-                    </div>
-                    <div id="zonnepanelen-interesse-container" class="hidden">
-                        <div class="setting-row">
-                            <label for="interesseZonnepanelen">Interesse in zonnepanelen?</label>
-                            <select id="interesseZonnepanelen"><option value="ja">Ja, maak een schatting</option><option value="nee">Nee, toon advies zonder panelen</option></select>
-                        </div>
-                        <div id="woningtype-container" class="setting-row">
-                            <label for="woningtype">Type woning</label>
-                            <select id="woningtype"><option value="8">Appartement (8 panelen)</option><option value="12" selected>Tussenwoning (12 panelen)</option><option value="16">Hoekwoning (16 panelen)</option><option value="20">Vrijstaand (20 panelen)</option></select>
-                        </div>
-                    </div>
-                </div>
-                <div id="lead-gen-card" class="setting-step hidden">
-                     <h3>Vrijblijvende Offerte</h3>
-                    <form id="lead-gen-form">
-                        <div class="setting-row"><label for="quote-naam">Naam</label><input type="text" id="quote-naam" required></div>
-                        <div class="setting-row"><label for="quote-email">E-mail</label><input type="email" id="quote-email" required></div>
-                        <button type="submit" id="lead-gen-button">Verstuur Aanvraag</button>
-                    </form>
-                </div>
-            </div>
-            <div id="results-panel" class="results-panel">
-                <div id="recommendation-card" class="result-card main-recommendation">
-                    <h3>Aanbevolen Capaciteit</h3>
-                    <div id="capaciteitResultaat">- kWh</div>
-                </div>
-                <div id="comparison-card" class="result-card">
-                    <h3>Jaarlijkse Energiekosten</h3>
-                    <div class="chart-canvas-container" style="height:250px"><canvas id="comparisonChartCanvas"></canvas></div>
-                </div>
-                <div id="simulation-card" class="result-card full-width">
-                    <h3>Energieprofiel (24u op een zonnige dag)</h3>
-                    <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+:root {
+    --primary-green: #00b050;
+    --dark-blue: #0a203e;
+    --light-gray: #f4f7f6;
+    --card-bg: #ffffff;
+    --text-color: #333;
+    --border-color: #e0e6ed;
+}
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 1300px;
+    margin: auto;
+    background-color: var(--card-bg);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+h1, h2, h3 {
+    text-align: center;
+    color: var(--dark-blue);
+    font-weight: 600;
+}
+.main-grid {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 30px;
+}
+.setting-step, .result-card {
+    background-color: #f9fbfd;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+details {
+    background-color: var(--card-bg);
+    padding: 5px 25px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+summary {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: var(--dark-blue);
+    padding: 20px 0;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: 'Inklappen ▲'; font-size: 0.7em; }
+details[open] summary::after { content: 'Uitklappen ▼'; }
+.details-content { padding-top: 20px; }
+.results-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-content: start;
+}
+.result-card.full-width {
+    grid-column: 1 / -1;
+}
+.main-recommendation {
+    text-align: center;
+    background-color: #eaf9ed;
+}
+.setting-row {
+    margin-bottom: 20px;
+}
+.setting-row label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+    text-align: left;
+}
+.setting-row select, .setting-row input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: white;
+    font-size: 1em;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+.hidden {
+    display: none;
+}
+#capaciteitResultaat {
+    font-size: 3em;
+    color: var(--primary-green);
+    font-weight: 700;
+}
+.chart-canvas-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+    margin-top: 20px;
+}
+.costs-table {
+    width: 100%;
+    margin-top: 15px;
+    font-size: 1em;
+    border-collapse: collapse;
+}
+.costs-table td {
+    padding: 12px 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+.costs-table td:last-child {
+    font-weight: 700;
+    text-align: right;
+}
+.costs-table tr:last-child td {
+    border-bottom: none;
+}
+.total-savings {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-green);
+}
+.action-button {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+.action-button:hover {
+    background-color: #009945;
+}
+@media (max-width: 1100px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
