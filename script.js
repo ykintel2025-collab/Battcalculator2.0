@@ -1,11 +1,13 @@
 let scenarioChart, comparisonChart;
 
+// --- DATA PROFIELEN EN PRIJZEN ---
 const E1A_PROFIEL = [0.033,0.027,0.024,0.022,0.023,0.03,0.043,0.055,0.052,0.045,0.04,0.039,0.038,0.037,0.036,0.038,0.047,0.06,0.065,0.063,0.06,0.055,0.05,0.043];
 const WARMTEPOMP_PROFIEL = [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.04,0.03,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.03,0.04,0.05,0.05,0.06,0.06,0.05,0.05];
 const ZONNEPROFIEL = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
 const VAST_TARIEF = 0.35;
 const TERUGLEVER_TARIEF = 0.08;
 
+// --- INITIALISATIE ---
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('select, input[type=number]').forEach(el => el.addEventListener('change', recalculateAndRedraw));
     document.getElementById('lead-gen-form').addEventListener('submit', handleQuoteSubmit);
@@ -18,7 +20,7 @@ function handleQuoteSubmit(event) {
     const calcs = calculateAll(state);
     const naam = document.getElementById('quote-naam').value;
     const email = document.getElementById('quote-email').value;
-    let body = `Nieuwe aanvraag via Calculator:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
+    let body = `Nieuwe aanvraag via Calculator v11.1:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
     body += `Basisverbruik: ${state.basisVerbruikKwh} kWh\nEV-verbruik: ${state.evVerbruikKwh} kWh (Laadtijd: ${state.evLaadtijd})\n`;
     body += `Warmtepomp: ${state.wpVerbruikKwh > 0 ? 'Ja' : 'Nee'}\n`;
     body += `Aantal panelen (ingevuld/geschat): ${state.aantalPanelen} stuks\n`;
@@ -65,7 +67,7 @@ function manageVisibility(state) {
 }
 
 function calculateAll(state) {
-    const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400, JAAROPBRENGST_FACTOR = 0.9;
+    const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
 
     const evVerbruikPerUur = new Array(24).fill(0);
     if (state.evVerbruikKwh > 0) {
@@ -87,7 +89,7 @@ function calculateAll(state) {
     let geschaaldeOpbrengst = new Array(24).fill(0);
     if(state.aantalPanelen > 0){
         const totaalWp = state.aantalPanelen * WP_PER_PANEEL;
-        const dagelijkseOpbrengstZonnig = (totaalWp * JAAROPBRENGST_FACTOR / 365) * 2.5; // Factor voor een zonnige dag
+        const dagelijkseOpbrengstZonnig = (totaalWp * 0.9 / 365) * 2.5;
         geschaaldeOpbrengst = ZONNEPROFIEL.map(p => p * dagelijkseOpbrengstZonnig);
     }
     
@@ -106,8 +108,8 @@ function calculateAll(state) {
 
 function updateUI(state, calcs){
     document.getElementById('capaciteitResultaat').textContent = `${calcs.aanbevolenCapaciteit.toFixed(1)} kWh`;
-    if (state.aantalPanelen === 0) {
-         document.getElementById('capaciteitResultaat').textContent = `N.v.t.`;
+    if (!state.heeftZonnepanelen && !state.interesseZonnepanelen) {
+         document.getElementById('capaciteitResultaat').innerHTML = `N.v.t. <br><small style="font-size: 0.4em; font-weight: 400;">(Batterij zonder zonnepanelen is niet rendabel)</small>`;
     }
     
     const simMetBatterij = simulateDay(calcs.geschaaldVerbruik, calcs.geschaaldeOpbrengst, calcs.aanbevolenCapaciteit);
@@ -119,11 +121,10 @@ function updateUI(state, calcs){
 }
 
 function simulateDay(verbruikData, opbrengstData, batterijCapaciteit) {
-    const MAX_RATE_KW = 5;
-    const DOD = 0.95;
+    const MAX_RATE_KW = 5, DOD = 0.95;
     const bruikbareCapaciteit = batterijCapaciteit * DOD;
-    let batterijLading = 0;
-    const result = { verbruikNet:[], verbruikBatterij:[], verbruikZon:[], opbrengstLaden:[], opbrengstExport:[], dagKosten: 0 };
+    let batterijLading = 0, dagKosten = 0;
+    const result = { verbruikNet:[], verbruikBatterij:[], verbruikZon:[], opbrengstLaden:[], opbrengstExport:[] };
 
     for (let i = 0; i < 24; i++) {
         let verbruik = verbruikData[i], opbrengst = opbrengstData[i];
@@ -136,13 +137,14 @@ function simulateDay(verbruikData, opbrengstData, batterijCapaciteit) {
         const lading = Math.min(opbrengst, bruikbareCapaciteit - batterijLading, MAX_RATE_KW);
         opbrengst -= lading; batterijLading += lading;
         
-        result.dagKosten += verbruik * VAST_TARIEF;
-        result.dagKosten -= opbrengst * TERUGLEVER_TARIEF;
+        dagKosten += verbruik * VAST_TARIEF;
+        dagKosten -= opbrengst * TERUGLEVER_TARIEF;
 
         result.verbruikZon.push(directGebruik); result.verbruikBatterij.push(ontlading);
         result.verbruikNet.push(verbruik); result.opbrengstLaden.push(-lading);
         result.opbrengstExport.push(-opbrengst);
     }
+    result.dagKosten = dagKosten;
     return result;
 }
 
@@ -150,23 +152,11 @@ function renderComparisonChart(simZonderAlles, simZonderBatterij, simMetBatterij
     const ctx = document.getElementById('comparisonChartCanvas')?.getContext('2d');
     if (!ctx) return;
 
-    const kostenZonderAlles = simZonderAlles.dagKosten * 365;
-    const kostenMetPanelen = simZonderBatterij.dagKosten * 365;
-    const kostenMetBatterij = simMetBatterij.dagKosten * 365;
-
-    if (comparisonChart) comparisonChart.destroy();
-    comparisonChart = new Chart(ctx, {
-        type: 'bar',
-        data: { 
-            labels: ['Zonder Panelen', 'Met Panelen', 'Met Panelen & Batterij'], 
-            datasets: [{ 
-                label: 'Jaarlijkse Energiekosten (€)', 
-                data: [kostenZonderAlles, kostenMetPanelen, kostenMetBatterij], 
-                backgroundColor: ['rgba(231, 76, 60, 0.7)', 'rgba(241, 196, 15, 0.7)', 'rgba(46, 204, 113, 0.7)'] 
-            }] 
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'Geschatte Jaarkosten (€)' } } } }
-    });
+    document.getElementById('costs-zonder-alles').textContent = `€ ${Math.round(simZonderAlles.dagKosten * 365).toLocaleString('nl-NL')}`;
+    document.getElementById('costs-met-panelen').textContent = `€ ${Math.round(simZonderBatterij.dagKosten * 365).toLocaleString('nl-NL')}`;
+    document.getElementById('costs-met-batterij').textContent = `€ ${Math.round(simMetBatterij.dagKosten * 365).toLocaleString('nl-NL')}`;
+    const besparing = (simZonderBatterij.dagKosten * 365) - (simMetBatterij.dagKosten * 365);
+    document.getElementById('savings-total').textContent = `€ ${Math.round(besparing).toLocaleString('nl-NL')}`;
 }
 
 function renderScenarioChart(sim, calcs) {
