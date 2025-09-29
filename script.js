@@ -20,7 +20,7 @@ function handleQuoteSubmit(event) {
     const calcs = calculateAll(state);
     const naam = document.getElementById('quote-naam').value;
     const email = document.getElementById('quote-email').value;
-    let body = `Nieuwe aanvraag via Calculator v11.1:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
+    let body = `Nieuwe aanvraag via Calculator v11.2:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
     body += `Basisverbruik: ${state.basisVerbruikKwh} kWh\nEV-verbruik: ${state.evVerbruikKwh} kWh (Laadtijd: ${state.evLaadtijd})\n`;
     body += `Warmtepomp: ${state.wpVerbruikKwh > 0 ? 'Ja' : 'Nee'}\n`;
     body += `Aantal panelen (ingevuld/geschat): ${state.aantalPanelen} stuks\n`;
@@ -29,9 +29,20 @@ function handleQuoteSubmit(event) {
     window.location.href = `mailto:jouw-email@voorbeeld.nl?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
+// --- HOOFDLOGICA ---
 function recalculateAndRedraw() {
     const state = getCurrentState();
     manageVisibility(state);
+
+    if (!state.basisVerbruikKwh || (state.heeftZonnepanelen && state.aantalPanelen === 0)) {
+        document.getElementById('initial-state-message').classList.remove('hidden');
+        document.getElementById('results-panel').classList.add('hidden');
+        return;
+    }
+    
+    document.getElementById('initial-state-message').classList.add('hidden');
+    document.getElementById('results-panel').classList.remove('hidden');
+
     const calculations = calculateAll(state);
     updateUI(state, calculations);
 }
@@ -61,14 +72,10 @@ function manageVisibility(state) {
     document.getElementById('zonnepanelen-interesse-container').classList.toggle('hidden', state.heeftZonnepanelen);
     document.getElementById('woningtype-container').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
     document.getElementById('lead-gen-card').classList.toggle('hidden', state.heeftZonnepanelen || !state.interesseZonnepanelen);
-    
-    const showResults = state.aantalPanelen > 0 || (!state.heeftZonnepanelen && !state.interesseZonnepanelen);
-    document.getElementById('results-panel').classList.toggle('hidden', !showResults);
 }
 
 function calculateAll(state) {
     const DOD = 0.95, RENDEMENT = 0.90, WP_PER_PANEEL = 400;
-
     const evVerbruikPerUur = new Array(24).fill(0);
     if (state.evVerbruikKwh > 0) {
         const dagelijksEvVerbruik = state.evVerbruikKwh / 365;
@@ -78,9 +85,7 @@ function calculateAll(state) {
             for (let i = 0; i < 4; i++) evVerbruikPerUur[i] = laadvermogen;
         } else { for (let i = 10; i < 16; i++) evVerbruikPerUur[i] = laadvermogen; }
     }
-    
     const wpVerbruikPerUur = WARMTEPOMP_PROFIEL.map(p => (state.wpVerbruikKwh / 365) * p);
-    
     const geschaaldVerbruik = new Array(24).fill(0);
     for (let i = 0; i < 24; i++) { 
         geschaaldVerbruik[i] = (E1A_PROFIEL[i] * (state.basisVerbruikKwh / 365)) + evVerbruikPerUur[i] + wpVerbruikPerUur[i];
@@ -152,10 +157,14 @@ function renderComparisonChart(simZonderAlles, simZonderBatterij, simMetBatterij
     const ctx = document.getElementById('comparisonChartCanvas')?.getContext('2d');
     if (!ctx) return;
 
-    document.getElementById('costs-zonder-alles').textContent = `€ ${Math.round(simZonderAlles.dagKosten * 365).toLocaleString('nl-NL')}`;
-    document.getElementById('costs-met-panelen').textContent = `€ ${Math.round(simZonderBatterij.dagKosten * 365).toLocaleString('nl-NL')}`;
-    document.getElementById('costs-met-batterij').textContent = `€ ${Math.round(simMetBatterij.dagKosten * 365).toLocaleString('nl-NL')}`;
-    const besparing = (simZonderBatterij.dagKosten * 365) - (simMetBatterij.dagKosten * 365);
+    const kostenZonderAlles = simZonderAlles.dagKosten * 365;
+    const kostenMetPanelen = simZonderBatterij.dagKosten * 365;
+    const kostenMetBatterij = simMetBatterij.dagKosten * 365;
+    const besparing = kostenMetPanelen - kostenMetBatterij;
+
+    document.getElementById('costs-zonder-alles').textContent = `€ ${Math.round(kostenZonderAlles).toLocaleString('nl-NL')}`;
+    document.getElementById('costs-met-panelen').textContent = `€ ${Math.round(kostenMetPanelen).toLocaleString('nl-NL')}`;
+    document.getElementById('costs-met-batterij').textContent = `€ ${Math.round(kostenMetBatterij).toLocaleString('nl-NL')}`;
     document.getElementById('savings-total').textContent = `€ ${Math.round(besparing).toLocaleString('nl-NL')}`;
 }
 
