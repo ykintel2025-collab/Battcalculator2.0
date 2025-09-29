@@ -1,13 +1,11 @@
 let scenarioChart, comparisonChart;
 
-// --- DATA PROFIELEN EN PRIJZEN ---
 const E1A_PROFIEL = [0.033,0.027,0.024,0.022,0.023,0.03,0.043,0.055,0.052,0.045,0.04,0.039,0.038,0.037,0.036,0.038,0.047,0.06,0.065,0.063,0.06,0.055,0.05,0.043];
 const WARMTEPOMP_PROFIEL = [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.04,0.03,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.03,0.04,0.05,0.05,0.06,0.06,0.05,0.05];
 const ZONNEPROFIEL = [0,0,0,0,0,0,0.01,0.03,0.06,0.09,0.11,0.13,0.14,0.13,0.12,0.09,0.05,0.03,0,0,0,0,0,0];
 const VAST_TARIEF = 0.35;
 const TERUGLEVER_TARIEF = 0.08;
 
-// --- INITIALISATIE ---
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('select, input[type=number]').forEach(el => el.addEventListener('change', recalculateAndRedraw));
     document.getElementById('lead-gen-form').addEventListener('submit', handleQuoteSubmit);
@@ -20,7 +18,7 @@ function handleQuoteSubmit(event) {
     const calcs = calculateAll(state);
     const naam = document.getElementById('quote-naam').value;
     const email = document.getElementById('quote-email').value;
-    let body = `Nieuwe aanvraag via Calculator v12.1:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
+    let body = `Nieuwe aanvraag via Calculator v12.2:\n\nNaam: ${naam}\nE-mail: ${email}\n\n--- Klantconfiguratie ---\n`;
     body += `Basisverbruik: ${state.basisVerbruikKwh} kWh\nEV-verbruik: ${state.evVerbruikKwh} kWh\nWarmtepomp: ${state.wpVerbruikKwh > 0 ? 'Ja' : 'Nee'}\n`;
     body += `Aantal panelen (ingevuld/geschat): ${state.aantalPanelen} stuks\n`;
     body += `Aanbevolen batterij: ${calcs.aanbevolenCapaciteit.toFixed(1)} kWh\n`;
@@ -28,12 +26,11 @@ function handleQuoteSubmit(event) {
     window.location.href = `mailto:jouw-email@voorbeeld.nl?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
-// --- HOOFDLOGICA ---
 function recalculateAndRedraw() {
     const state = getCurrentState();
     manageVisibility(state);
 
-    if (!state.basisVerbruikKwh || (state.heeftZonnepanelen && !state.aantalPanelen)) {
+    if (!state.basisVerbruikKwh || (state.heeftZonnepanelen && isNaN(state.aantalPanelen))) {
         document.getElementById('initial-state-message').classList.remove('hidden');
         document.getElementById('results-panel').classList.add('hidden');
         return;
