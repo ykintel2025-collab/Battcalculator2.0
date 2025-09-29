@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuisbatterij Calculator v11.2 | Exclupower</title>
+    <title>Thuisbatterij Calculator v12.0 | Exclupower</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Thuisbatterij Dashboard v11.2</h1>
+        <h1>Thuisbatterij Dashboard v12.0</h1>
         <div class="main-grid">
             <div class="settings-panel">
                 <details open>
@@ -33,13 +33,6 @@
                                 <option value="1800">Ja, tot 10.000 km/j</option>
                                 <option value="3600">Ja, 10-20.000 km/j</option>
                                 <option value="5400">Ja, 20.000+ km/j</option>
-                            </select>
-                        </div>
-                        <div id="ev-laadtijd-container" class="setting-row hidden">
-                            <label for="evLaadtijd">Wanneer laadt u meestal op?</label>
-                            <select id="evLaadtijd">
-                                <option value="nacht">'s Nachts</option>
-                                <option value="dag">Overdag</option>
                             </select>
                         </div>
                         <div class="setting-row">
@@ -91,11 +84,11 @@
                 </div>
             </div>
             <div id="results-panel" class="results-panel hidden">
-                <div id="recommendation-card" class="result-card main-recommendation">
+                <div class="result-card main-recommendation">
                     <h3>Aanbevolen Capaciteit</h3>
                     <div id="capaciteitResultaat">- kWh</div>
                 </div>
-                <div id="comparison-card" class="result-card">
+                <div class="result-card">
                     <h3>Geschatte Jaarlijkse Energiekosten</h3>
                     <table class="costs-table">
                         <tbody>
@@ -106,7 +99,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="simulation-card" class="result-card full-width">
+                <div class="result-card full-width">
                     <h3>Energieprofiel (24u op een zonnige dag)</h3>
                     <div class="chart-canvas-container"><canvas id="scenarioChartCanvas"></canvas></div>
                 </div>
